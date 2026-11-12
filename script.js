@@ -19,17 +19,25 @@ const defaultProducts = [
     {
         id: 1,
         name: "Fresh Orange Juice",
-        price: 999,
+        price: 289,
         description: "Fresh and refreshing orange juice.",
-        image: "/ai.jpg"
+        image: "/two.jpg"
     },
     {
         id: 2,
         name: "Fresh Watermelon Juice",
-        price: 779,
+        price: 529,
         description: "Sweet and refreshing watermelon juice.",
-        image: "/logo2.jpg"
+        image: "/ai.jpg"
+    },
+    {
+        id: 3,
+        name: "Fresh Watermelon Juice",
+        price: 529,
+        description: "Sweet and refreshing watermelon juice.",
+        image: "/ai.jpg"
     }
+    
 ];
 
 // =====================================
