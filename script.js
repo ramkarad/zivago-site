@@ -15,7 +15,7 @@ const defaultProducts = [
     },
     {
         id: 2,
-        name: "Watermelon Juice",
+        name: "jaykarad",
         price: 79,
         description: "Sweet and refreshing watermelon juice.",
         image: "two.jpg"
