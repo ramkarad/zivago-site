@@ -116,6 +116,9 @@
       font-size: 17px;
       font-weight: 700;
       cursor: pointer;
+      display: block;
+      box-sizing: border-box;
+      text-decoration: none;
       margin-bottom: 22px;
       transition: 0.3s;
     }
@@ -269,9 +272,10 @@
     </button>
 
     <!-- OPEN UPI APP -->
-    <button class="payment-open" onclick="openUPIApp()">
+    <a class="payment-open" id="upi-pay-link" href="#" role="button"
+       onclick="return launchUPIPayment(event)">
       Open UPI App to Pay →
-    </button>
+    </a>
 
     <p class="payment-instructions">
       Tap the button to open a UPI app on your phone.
@@ -363,23 +367,24 @@
 <!-- PAYMENT SCRIPT -->
 <script>
 
-  // ZIVAGO UPI ID
+  // ZIVAGO PAYMENT SETTINGS
+  // IMPORTANT: Confirm this UPI ID is active and can receive payments.
   const ZIVAGO_UPI_ID = "8734025711@axi";
+  const ZIVAGO_PAYEE_NAME = "ZivaGo";
 
-  // GET CART TOTAL
+  // Read the current cart total from the cart summary.
   function getPaymentAmount() {
+    const totalElement = document.getElementById("cart-total");
+    if (!totalElement) return 0;
 
-    const totalText =
-      document.getElementById("cart-total").innerText;
+    const amount = Number(
+      totalElement.textContent.replace(/[^\d.]/g, "")
+    );
 
-    return parseFloat(
-      totalText.replace(/[^\d.]/g, "")
-    ) || 0;
+    return Number.isFinite(amount) ? amount : 0;
   }
 
-  // OPEN PAYMENT POPUP
   function openPayment() {
-
     const amount = getPaymentAmount();
 
     if (amount <= 0) {
@@ -387,94 +392,99 @@
       return;
     }
 
-    document.getElementById("payment-amount").innerText =
+    document.getElementById("payment-amount").textContent =
       "₹" + amount.toFixed(2);
 
-    document.getElementById("upi-display").innerText =
+    document.getElementById("upi-display").textContent =
       ZIVAGO_UPI_ID;
 
-    document.getElementById("payment-status").innerText = "";
+    document.getElementById("payment-status").textContent = "";
 
-    document.getElementById("payment-overlay")
-      .classList.add("show");
+    // Prepare the UPI link before the customer taps the payment link.
+    const payLink = document.getElementById("upi-pay-link");
+    if (payLink) {
+      payLink.href = buildUPILink(amount);
+    }
+
+    document.getElementById("payment-overlay").classList.add("show");
   }
 
-  // CLOSE PAYMENT POPUP
   function closePayment() {
-
-    document.getElementById("payment-overlay")
-      .classList.remove("show");
+    document.getElementById("payment-overlay").classList.remove("show");
   }
 
-  // COPY UPI ID - FIXED
-  async function copyUPI() {
+  function buildUPILink(amount) {
+    const params = new URLSearchParams({
+      pa: ZIVAGO_UPI_ID,
+      pn: ZIVAGO_PAYEE_NAME,
+      am: amount.toFixed(2),
+      cu: "INR",
+      tn: "ZivaGo Juice Order"
+    });
 
-    const status =
-      document.getElementById("payment-status");
+    return "upi://pay?" + params.toString();
+  }
+
+  // This runs directly from the customer's tap on the payment link.
+  function launchUPIPayment(event) {
+    if (event) event.preventDefault();
+
+    const amount = getPaymentAmount();
+    const status = document.getElementById("payment-status");
+
+    if (amount <= 0) {
+      alert("Your cart is empty!");
+      return false;
+    }
+
+    // Basic format check only. This does not confirm that the UPI ID is active.
+    if (!/^[A-Za-z0-9._-]+@[A-Za-z0-9.-]+$/.test(ZIVAGO_UPI_ID)) {
+      status.textContent = "Please check the store UPI ID.";
+      return false;
+    }
+
+    const link = buildUPILink(amount);
+    const payLink = document.getElementById("upi-pay-link");
+
+    if (payLink) payLink.href = link;
+
+    status.textContent =
+      "Opening your UPI app… If it does not open, copy the UPI ID and pay manually.";
+
+    // Use a normal anchor navigation, initiated by the user's tap.
+    window.location.href = link;
+    return false;
+  }
+
+  async function copyUPI() {
+    const status = document.getElementById("payment-status");
 
     try {
-
       if (navigator.clipboard && window.isSecureContext) {
-
         await navigator.clipboard.writeText(ZIVAGO_UPI_ID);
-
       } else {
-
-        // Fallback copy method
         const textArea = document.createElement("textarea");
-
         textArea.value = ZIVAGO_UPI_ID;
-
         textArea.style.position = "fixed";
         textArea.style.left = "-9999px";
-
         document.body.appendChild(textArea);
-
         textArea.focus();
         textArea.select();
 
         const copied = document.execCommand("copy");
-
         document.body.removeChild(textArea);
 
-        if (!copied) {
-          throw new Error("Copy failed");
-        }
+        if (!copied) throw new Error("Clipboard copy failed");
       }
 
-      status.innerText =
-        "✓ UPI ID copied successfully!";
-
+      status.textContent = "UPI ID copied. Open your UPI app and pay manually.";
     } catch (error) {
-
-      status.innerText =
-        "Copy failed. Please copy manually: " + ZIVAGO_UPI_ID;
+      console.error("UPI copy error:", error);
+      status.textContent = "Copy unavailable. Please copy this UPI ID: " + ZIVAGO_UPI_ID;
     }
   }
 
-  // OPEN UPI APP
-  function openUPIApp() {
-
-    const amount = getPaymentAmount();
-
-    if (amount <= 0) {
-      alert("Your cart is empty!");
-      return;
-    }
-
-    const upiLink =
-      "upi://pay?pa=" + encodeURIComponent(ZIVAGO_UPI_ID) +
-      "&pn=" + encodeURIComponent("ZivaGo") +
-      "&am=" + amount.toFixed(2) +
-      "&cu=INR" +
-      "&tn=" + encodeURIComponent("ZivaGo Juice Order");
-
-    window.location.href = upiLink;
-  }
-
-  // CONTINUE TO WHATSAPP
   function continueOrder() {
-
     if (getPaymentAmount() <= 0) {
       alert("Your cart is empty!");
       return;
@@ -482,14 +492,12 @@
 
     closePayment();
 
+    // Payment is not verified by this static website.
+    // The store must verify the credit in its bank/UPI app before fulfilling.
     if (typeof orderWhatsApp === "function") {
-
       orderWhatsApp();
-
     } else {
-
       alert("WhatsApp ordering function not found in script.js");
-
     }
   }
 
