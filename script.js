@@ -2,9 +2,9 @@
 const PRODUCT_KEY = "freshsip_products";
 const CART_KEY = "freshsip_cart";
 
-// =====================================
-// 1. DEFAULT PRODUCTS
-// =====================================
+const DB_NAME = "zivago_database";
+const DB_VERSION = 1;
+const STORE_NAME = "products";
 
 const defaultProducts = [
     {
@@ -12,72 +12,177 @@ const defaultProducts = [
         name: "Fresh Orange Juice",
         price: 99,
         description: "Fresh and refreshing orange juice.",
-        image: "/two.jpg"
+        image: "./two.jpg"
     },
     {
         id: 2,
         name: "Fresh Watermelon Juice",
         price: 79,
         description: "Sweet and refreshing watermelon juice.",
-        image: "/watermelon.jpg"
+        image: "./watermelon.jpg"
     }
 ];
 
 // =====================================
-// 2. INITIALIZE PRODUCTS
+// 1. INDEXEDDB CONNECTION
 // =====================================
 
-function initializeProducts() {
+function openProductDB() {
+    return new Promise((resolve, reject) => {
 
-    if (!localStorage.getItem(PRODUCT_KEY)) {
-        localStorage.setItem(
-            PRODUCT_KEY,
-            JSON.stringify(defaultProducts)
-        );
-    }
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+        request.onupgradeneeded = function(event) {
+            const db = event.target.result;
+
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                db.createObjectStore(STORE_NAME, {
+                    keyPath: "id"
+                });
+            }
+        };
+
+        request.onsuccess = function() {
+            resolve(request.result);
+        };
+
+        request.onerror = function() {
+            reject(request.error);
+        };
+
+    });
 }
 
-initializeProducts();
-
 // =====================================
-// 3. GET PRODUCTS
+// 2. GET ALL PRODUCTS
 // =====================================
 
-function getProducts() {
+async function getProducts() {
+    const db = await openProductDB();
+
+    return new Promise((resolve, reject) => {
+
+        const transaction = db.transaction(STORE_NAME, "readonly");
+        const store = transaction.objectStore(STORE_NAME);
+
+        const request = store.getAll();
+
+        request.onsuccess = () => {
+            resolve(request.result || []);
+        };
+
+        request.onerror = () => {
+            reject(request.error);
+        };
+
+    });
+}
+
+// =====================================
+// 3. SAVE PRODUCT
+// =====================================
+
+async function saveProduct(product) {
+    const db = await openProductDB();
+
+    return new Promise((resolve, reject) => {
+
+        const transaction = db.transaction(STORE_NAME, "readwrite");
+
+        transaction.objectStore(STORE_NAME).put(product);
+
+        transaction.oncomplete = () => resolve(true);
+
+        transaction.onerror = () => reject(transaction.error);
+
+        transaction.onabort = () => reject(transaction.error);
+
+    });
+}
+
+// =====================================
+// 4. DELETE PRODUCT
+// =====================================
+
+async function deleteStoredProduct(id) {
+    const db = await openProductDB();
+
+    return new Promise((resolve, reject) => {
+
+        const transaction = db.transaction(STORE_NAME, "readwrite");
+
+        transaction.objectStore(STORE_NAME).delete(id);
+
+        transaction.oncomplete = () => resolve(true);
+
+        transaction.onerror = () => reject(transaction.error);
+
+    });
+}
+
+// =====================================
+// 5. INITIALIZE PRODUCTS + MIGRATION
+// =====================================
+
+async function initializeProducts() {
 
     try {
-        const products = JSON.parse(
-            localStorage.getItem(PRODUCT_KEY)
-        );
 
-        return Array.isArray(products) ? products : defaultProducts;
+        let products = await getProducts();
+
+        if (products.length === 0) {
+
+            let oldProducts = [];
+
+            try {
+                oldProducts = JSON.parse(
+                    localStorage.getItem(PRODUCT_KEY) || "[]"
+                );
+            } catch (error) {
+                oldProducts = [];
+            }
+
+            const initialProducts =
+                Array.isArray(oldProducts) && oldProducts.length
+                    ? oldProducts
+                    : defaultProducts;
+
+            for (const product of initialProducts) {
+                await saveProduct(product);
+            }
+
+            localStorage.removeItem(PRODUCT_KEY);
+        }
+
+        return await getProducts();
 
     } catch (error) {
+
+        console.error("Product database error:", error);
+
         return defaultProducts;
     }
 }
 
 // =====================================
-// 4. GET CART
+// 6. CART FUNCTIONS
 // =====================================
 
 function getCart() {
 
     try {
+
         const cart = JSON.parse(
-            localStorage.getItem(CART_KEY)
+            localStorage.getItem(CART_KEY) || "[]"
         );
 
         return Array.isArray(cart) ? cart : [];
 
     } catch (error) {
+
         return [];
     }
 }
-
-// =====================================
-// 5. SAVE CART
-// =====================================
 
 function saveCart(cart) {
 
@@ -90,7 +195,7 @@ function saveCart(cart) {
 }
 
 // =====================================
-// 6. IMAGE PATH FIX FOR VERCEL
+// 7. IMAGE PATH
 // =====================================
 
 function getImagePath(image) {
@@ -101,38 +206,34 @@ function getImagePath(image) {
 
     image = String(image).trim();
 
-    // External image URLs
     if (
         image.startsWith("https://") ||
         image.startsWith("http://") ||
-        image.startsWith("data:")
+        image.startsWith("data:") ||
+        image.startsWith("blob:")
     ) {
         return image;
     }
 
-    // Root-relative image paths
-    if (image.startsWith("/")) {
-        return image;
-    }
-
-    // Relative paths become root-relative
-    return "/" + image.replace(/^\.\/+/, "");
+    return image.startsWith("/")
+        ? image
+        : "./" + image.replace(/^\.\/+/, "");
 }
 
 // =====================================
-// 7. IMAGE ERROR HANDLER
+// 8. IMAGE ERROR
 // =====================================
 
-function imageError(image) {
+function imageError(img) {
 
-    image.onerror = null;
+    img.onerror = null;
 
-    image.src =
+    img.src =
         "https://placehold.co/600x400?text=Fresh+Juice";
 }
 
 // =====================================
-// 8. ESCAPE HTML
+// 9. ESCAPE HTML
 // =====================================
 
 function escapeHTML(value) {
@@ -147,7 +248,7 @@ function escapeHTML(value) {
 }
 
 // =====================================
-// 9. MOBILE MENU
+// 10. MOBILE MENU
 // =====================================
 
 function toggleMenu() {
@@ -160,7 +261,7 @@ function toggleMenu() {
 }
 
 // =====================================
-// 10. UPDATE CART COUNT
+// 11. UPDATE CART COUNT
 // =====================================
 
 function updateCartCount() {
@@ -170,146 +271,124 @@ function updateCartCount() {
         0
     );
 
-    document.querySelectorAll(".cart-count").forEach(el => {
-        el.textContent = count;
+    document.querySelectorAll(".cart-count").forEach(element => {
+        element.textContent = count;
     });
-
-    const popupCount =
-        document.getElementById("popupCartCount");
-
-    if (popupCount) {
-        popupCount.textContent =
-            `🛒 ${count} items in your cart`;
-    }
 }
 
 // =====================================
-// 11. CREATE CART POPUP
+// 12. CART SUCCESS MESSAGE
 // =====================================
 
-function createCartPopup() {
-
-    if (document.getElementById("cartSuccessPopup")) {
-        return;
-    }
-
-    const popup = document.createElement("div");
-
-    popup.id = "cartSuccessPopup";
-    popup.className = "cart-success-popup";
-
-    popup.setAttribute("role", "status");
-    popup.setAttribute("aria-live", "polite");
-
-    popup.innerHTML = `
-        <button
-            class="popup-close"
-            id="popupClose"
-            aria-label="Close">
-            &times;
-        </button>
-
-        <div class="popup-heading">
-
-            <div class="popup-check">✓</div>
-
-            <div class="popup-title">
-                <h3>Added to Cart!</h3>
-                <span>Successfully added</span>
-            </div>
-
-        </div>
-
-        <p
-            class="popup-description"
-            id="popupProductName">
-            Your fresh juice has been added.
-        </p>
-
-        <div class="popup-divider"></div>
-
-        <div class="popup-bottom">
-
-            <span
-                class="popup-cart-count"
-                id="popupCartCount">
-                🛒 0 items in your cart
-            </span>
-
-            <a href="/cart.html" class="popup-view-cart">
-                View Cart →
-            </a>
-
-        </div>
-
-        <div class="popup-progress"></div>
-    `;
-
-    document.body.appendChild(popup);
-
-    document.getElementById("popupClose")
-        .addEventListener("click", closeCartPopup);
-}
-
-// =====================================
-// 12. CLOSE CART POPUP
-// =====================================
-
-let popupTimer;
-
-function closeCartPopup() {
-
-    const popup =
-        document.getElementById("cartSuccessPopup");
-
-    if (popup) {
-        popup.classList.remove("active");
-    }
-
-    clearTimeout(popupTimer);
-}
-
-// =====================================
-// 13. SHOW CART POPUP
-// =====================================
+let cartToastTimer;
 
 function showCartToast(productName) {
 
-    createCartPopup();
+    let toast = document.getElementById("cart-toast");
 
-    const popup =
-        document.getElementById("cartSuccessPopup");
+    if (!toast) {
 
-    const productMessage =
-        document.getElementById("popupProductName");
+        toast = document.createElement("div");
 
-    const cartCount =
-        document.getElementById("popupCartCount");
+        toast.id = "cart-toast";
 
-    if (!popup) return;
+        toast.style.cssText = `
+            position:fixed;
+            top:20px;
+            right:20px;
+            width:min(360px,calc(100% - 30px));
+            background:#fff;
+            padding:20px;
+            border-radius:15px;
+            box-shadow:0 10px 35px rgba(0,0,0,.18);
+            border-top:5px solid #398342;
+            z-index:999999;
+            opacity:0;
+            visibility:hidden;
+            transform:translateY(-15px);
+            transition:.3s ease;
+        `;
 
-    productMessage.textContent =
-        productName + " has been added to your cart.";
+        toast.innerHTML = `
+            <button id="freshToastClose"
+                style="float:right;border:0;background:none;font-size:23px;cursor:pointer">
+                ×
+            </button>
 
-    const totalItems = getCart().reduce(
+            <strong style="color:#398342;font-size:16px">
+                ✓ Added to Cart Successfully!
+            </strong>
+
+            <p id="freshToastMessage"
+                style="color:#666;font-size:14px;line-height:1.5">
+            </p>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:15px">
+                <span id="freshToastCount"
+                    style="font-size:12px;color:#398342;font-weight:bold">
+                </span>
+
+                <a href="./cart.html"
+                    style="background:#f28c28;color:white;padding:9px 14px;border-radius:25px;text-decoration:none;font-size:12px">
+                    View Cart →
+                </a>
+            </div>
+        `;
+
+        document.body.appendChild(toast);
+
+        document.getElementById("freshToastClose")
+            .addEventListener("click", closeCartToast);
+    }
+
+    const message = document.getElementById("toast-message")
+        || document.getElementById("freshToastMessage");
+
+    const count = document.getElementById("toast-count")
+        || document.getElementById("freshToastCount");
+
+    if (message) {
+        message.textContent =
+            productName + " has been added to your cart.";
+    }
+
+    const total = getCart().reduce(
         (sum, item) => sum + Number(item.quantity || 0),
         0
     );
 
-    cartCount.textContent =
-        `🛒 ${totalItems} items in your cart`;
+    if (count) {
+        count.textContent = `🛒 ${total} items in your cart`;
+    }
 
-    clearTimeout(popupTimer);
+    clearTimeout(cartToastTimer);
 
-    popup.classList.remove("active");
+    toast.classList.add("show");
 
-    void popup.offsetWidth;
+    toast.style.opacity = "1";
+    toast.style.visibility = "visible";
+    toast.style.transform = "translateY(0)";
 
-    popup.classList.add("active");
+    cartToastTimer = setTimeout(closeCartToast, 3500);
+}
 
-    popupTimer = setTimeout(() => {
-        popup.classList.remove("active");
-    }, 3500);
+// =====================================
+// 13. CLOSE CART MESSAGE
+// =====================================
+
+function closeCartToast() {
+
+    const toast = document.getElementById("cart-toast");
+
+    if (!toast) return;
+
+    toast.classList.remove("show");
+
+    toast.style.opacity = "0";
+    toast.style.visibility = "hidden";
+    toast.style.transform = "translateY(-15px)";
+
+    clearTimeout(cartToastTimer);
 }
 
 // =====================================
@@ -318,18 +397,12 @@ function showCartToast(productName) {
 
 function productCard(product) {
 
-    const image = escapeHTML(
-        getImagePath(product.image)
-    );
-
+    const image = escapeHTML(getImagePath(product.image));
     const name = escapeHTML(product.name);
-
-    const description =
-        escapeHTML(product.description);
+    const description = escapeHTML(product.description);
+    const id = escapeHTML(product.id);
 
     const price = Number(product.price) || 0;
-
-    const id = escapeHTML(product.id);
 
     return `
         <div class="product-card">
@@ -355,9 +428,7 @@ function productCard(product) {
                     <button
                         class="add-btn"
                         onclick="addToCart('${id}')">
-
                         Add to Cart +
-
                     </button>
 
                 </div>
@@ -372,20 +443,16 @@ function productCard(product) {
 // 15. DISPLAY PRODUCTS
 // =====================================
 
-function displayProducts() {
+async function displayProducts() {
 
-    const products = getProducts();
+    const products = await getProducts();
 
-    const featured =
-        document.getElementById("featured-products");
+    const featured = document.getElementById("featured-products");
 
-    const all =
-        document.getElementById("all-products");
+    const all = document.getElementById("all-products");
 
-    const empty =
-        document.getElementById("empty-products");
+    const empty = document.getElementById("empty-products");
 
-    // Homepage
     if (featured) {
 
         featured.innerHTML = products
@@ -394,7 +461,6 @@ function displayProducts() {
             .join("");
     }
 
-    // Products page
     if (all) {
 
         all.innerHTML = products
@@ -411,10 +477,12 @@ function displayProducts() {
 // 16. ADD TO CART
 // =====================================
 
-function addToCart(id) {
+async function addToCart(id) {
 
-    const product = getProducts().find(
-        p => String(p.id) === String(id)
+    const products = await getProducts();
+
+    const product = products.find(
+        item => String(item.id) === String(id)
     );
 
     if (!product) {
@@ -450,23 +518,21 @@ function addToCart(id) {
 // 17. DISPLAY CART
 // =====================================
 
-function displayCart() {
+async function displayCart() {
 
-    const container =
-        document.getElementById("cart-items");
+    const container = document.getElementById("cart-items");
 
-    const summary =
-        document.getElementById("cart-summary");
+    const summary = document.getElementById("cart-summary");
 
     if (!container || !summary) return;
 
-    const products = getProducts();
+    const products = await getProducts();
 
     let cart = getCart();
 
     cart = cart.filter(item =>
-        products.some(
-            p => String(p.id) === String(item.id)
+        products.some(product =>
+            String(product.id) === String(item.id)
         )
     );
 
@@ -476,15 +542,11 @@ function displayCart() {
 
         container.innerHTML = `
             <div class="empty-cart">
-
                 <h2>🛒 Your Cart is Empty</h2>
-
                 <p>Add your favourite fresh juices!</p>
-
-                <a href="/products.html" class="btn">
+                <a href="./products.html" class="btn">
                     Shop Now
                 </a>
-
             </div>
         `;
 
@@ -534,15 +596,13 @@ function displayCart() {
 
                     <div class="quantity-control">
 
-                        <button
-                            onclick="changeQuantity('${id}', -1)">
+                        <button onclick="changeQuantity('${id}',-1)">
                             −
                         </button>
 
                         <span>${quantity}</span>
 
-                        <button
-                            onclick="changeQuantity('${id}', 1)">
+                        <button onclick="changeQuantity('${id}',1)">
                             +
                         </button>
 
@@ -563,12 +623,10 @@ function displayCart() {
 
     }).join("");
 
-    const totalElement =
-        document.getElementById("cart-total");
+    const totalElement = document.getElementById("cart-total");
 
     if (totalElement) {
-        totalElement.textContent =
-            "₹" + total.toFixed(2);
+        totalElement.textContent = "₹" + total.toFixed(2);
     }
 }
 
@@ -599,7 +657,7 @@ function changeQuantity(id, change) {
 }
 
 // =====================================
-// 19. REMOVE PRODUCT
+// 19. REMOVE FROM CART
 // =====================================
 
 function removeFromCart(id) {
@@ -617,11 +675,11 @@ function removeFromCart(id) {
 // 20. WHATSAPP ORDER
 // =====================================
 
-function orderWhatsApp() {
+async function orderWhatsApp() {
 
     const cart = getCart();
 
-    const products = getProducts();
+    const products = await getProducts();
 
     if (cart.length === 0) {
         alert("Your cart is empty!");
@@ -650,33 +708,38 @@ function orderWhatsApp() {
             `${product.name} x ${item.quantity} = ₹${subtotal.toFixed(2)}\n`;
     });
 
-    message +=
-        `\nTotal Amount: ₹${total.toFixed(2)}`;
+    message += `\nTotal Amount: ₹${total.toFixed(2)}`;
 
-    message +=
-        "\n\nPlease confirm my order.";
-
-    const whatsappNumber = "9724307705";
+    message += "\n\nPlease confirm my order.";
 
     window.open(
-        "https://wa.me/" +
-        whatsappNumber +
-        "?text=" +
+        "https://wa.me/919724307705?text=" +
         encodeURIComponent(message),
-        "_blank"
+        "_blank",
+        "noopener"
     );
 }
 
 // =====================================
-// 21. INITIALIZE WEBSITE
+// 21. WEBSITE INITIALIZATION
 // =====================================
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
 
     updateCartCount();
 
-    displayProducts();
+    try {
 
-    displayCart();
+        await initializeProducts();
+
+        await displayProducts();
+
+        await displayCart();
+
+    } catch (error) {
+
+        console.error("Website initialization error:", error);
+
+    }
 
 });
