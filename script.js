@@ -12,14 +12,14 @@ const defaultProducts = [
         name: "Fresh Orange Juice",
         price: 99,
         description: "Fresh and refreshing orange juice.",
-        image: "./two.jpg"
+        image: "two.jpg"
     },
     {
         id: 2,
         name: "Fresh Watermelon Juice",
         price: 79,
         description: "Sweet and refreshing watermelon juice.",
-        image: "./watermelon.jpg"
+        image: "logo2.jpg"
     }
 ];
 
