@@ -6,22 +6,22 @@ const DB_NAME = "zivago_database";
 const DB_VERSION = 1;
 const STORE_NAME = "products";
 
-// const defaultProducts = [
-//     {
-//         id: 1,
-//         name: "Fresh Orange Juice",
-//         price: 99,
-//         description: "Fresh and refreshing orange juice.",
-//         image: "two.jpg"
-//     },
-//     {
-//         id: 2,
-//         name: "Fresh Watermelon Juice",
-//         price: 79,
-//         description: "Sweet and refreshing watermelon juice.",
-//         image: "logo2.jpg"
-//     }
-// ];
+const defaultProducts = [
+    {
+        id: 1,
+        name: "Fresh Orange Juice",
+        price: 99,
+        description: "Fresh and refreshing orange juice.",
+        image: "two.jpg"
+    },
+    {
+        id: 2,
+        name: "Fresh Watermelon Juice",
+        price: 79,
+        description: "Sweet and refreshing watermelon juice.",
+        image: "logo2.jpg"
+    }
+];
 
 // =====================================
 // 1. INDEXEDDB CONNECTION
