@@ -1,4 +1,9 @@
 
+// =====================================
+// ZIVAGO WEBSITE - COMPLETE SCRIPT.JS
+// VERCEL IMAGE FIX + CART + INDEXEDDB
+// =====================================
+
 const PRODUCT_KEY = "freshsip_products";
 const CART_KEY = "freshsip_cart";
 
@@ -6,122 +11,252 @@ const DB_NAME = "zivago_database";
 const DB_VERSION = 1;
 const STORE_NAME = "products";
 
+// =====================================
+// 1. DEFAULT PRODUCTS
+// =====================================
+
 const defaultProducts = [
     {
         id: 1,
         name: "Fresh Orange Juice",
         price: 99,
         description: "Fresh and refreshing orange juice.",
-        image: "two.jpg"
+        image: "/two.jpg"
     },
     {
         id: 2,
         name: "Fresh Watermelon Juice",
         price: 79,
         description: "Sweet and refreshing watermelon juice.",
-        image: "logo2.jpg"
+        image: "/logo2.jpg"
     }
 ];
 
 // =====================================
-// 1. INDEXEDDB CONNECTION
+// 2. INDEXEDDB CONNECTION
 // =====================================
 
 function openProductDB() {
+
     return new Promise((resolve, reject) => {
+
+        if (!window.indexedDB) {
+            reject(new Error("IndexedDB is not supported."));
+            return;
+        }
 
         const request = indexedDB.open(DB_NAME, DB_VERSION);
 
         request.onupgradeneeded = function(event) {
+
             const db = event.target.result;
 
             if (!db.objectStoreNames.contains(STORE_NAME)) {
+
                 db.createObjectStore(STORE_NAME, {
                     keyPath: "id"
                 });
+
             }
+
         };
 
         request.onsuccess = function() {
+
             resolve(request.result);
+
         };
 
         request.onerror = function() {
+
             reject(request.error);
+
         };
 
     });
+
 }
 
 // =====================================
-// 2. GET ALL PRODUCTS
+// 3. IMAGE PATH - VERCEL FIX
+// =====================================
+
+function getImagePath(image) {
+
+    if (!image) {
+
+        return "https://placehold.co/600x400?text=Fresh+Juice";
+
+    }
+
+    image = String(image).trim();
+
+    // External images
+    if (
+        image.startsWith("https://") ||
+        image.startsWith("http://") ||
+        image.startsWith("data:") ||
+        image.startsWith("blob:")
+    ) {
+
+        return image;
+
+    }
+
+    // Remove ./ from old saved paths
+    image = image.replace(/^\.\/+/, "");
+
+    // Root-relative path
+    return "/" + image.replace(/^\/+/, "");
+
+}
+
+// =====================================
+// 4. IMAGE ERROR HANDLING
+// =====================================
+
+function imageError(img) {
+
+    console.error("Image failed to load:", img.src);
+
+    img.onerror = null;
+
+    img.src =
+        "https://placehold.co/600x400?text=Image+Not+Available";
+
+}
+
+// =====================================
+// 5. GET ALL PRODUCTS
 // =====================================
 
 async function getProducts() {
+
     const db = await openProductDB();
 
     return new Promise((resolve, reject) => {
 
-        const transaction = db.transaction(STORE_NAME, "readonly");
+        const transaction = db.transaction(
+            STORE_NAME,
+            "readonly"
+        );
+
         const store = transaction.objectStore(STORE_NAME);
 
         const request = store.getAll();
 
         request.onsuccess = () => {
-            resolve(request.result || []);
+
+            const products = request.result || [];
+
+            // Normalize old image paths
+            const updatedProducts = products.map(product => ({
+                ...product,
+                image: getImagePath(product.image)
+            }));
+
+            resolve(updatedProducts);
+
+            db.close();
+
         };
 
         request.onerror = () => {
+
             reject(request.error);
+
+            db.close();
+
         };
 
     });
+
 }
 
 // =====================================
-// 3. SAVE PRODUCT
+// 6. SAVE PRODUCT
 // =====================================
 
 async function saveProduct(product) {
+
     const db = await openProductDB();
 
     return new Promise((resolve, reject) => {
 
-        const transaction = db.transaction(STORE_NAME, "readwrite");
+        const transaction = db.transaction(
+            STORE_NAME,
+            "readwrite"
+        );
 
-        transaction.objectStore(STORE_NAME).put(product);
+        const updatedProduct = {
+            ...product,
+            image: getImagePath(product.image)
+        };
 
-        transaction.oncomplete = () => resolve(true);
+        transaction.objectStore(STORE_NAME).put(updatedProduct);
 
-        transaction.onerror = () => reject(transaction.error);
+        transaction.oncomplete = () => {
 
-        transaction.onabort = () => reject(transaction.error);
+            resolve(true);
+            db.close();
+
+        };
+
+        transaction.onerror = () => {
+
+            reject(transaction.error);
+            db.close();
+
+        };
+
+        transaction.onabort = () => {
+
+            reject(transaction.error);
+            db.close();
+
+        };
 
     });
+
 }
 
 // =====================================
-// 4. DELETE PRODUCT
+// 7. DELETE PRODUCT
 // =====================================
 
 async function deleteStoredProduct(id) {
+
     const db = await openProductDB();
 
     return new Promise((resolve, reject) => {
 
-        const transaction = db.transaction(STORE_NAME, "readwrite");
+        const transaction = db.transaction(
+            STORE_NAME,
+            "readwrite"
+        );
 
         transaction.objectStore(STORE_NAME).delete(id);
 
-        transaction.oncomplete = () => resolve(true);
+        transaction.oncomplete = () => {
 
-        transaction.onerror = () => reject(transaction.error);
+            resolve(true);
+            db.close();
+
+        };
+
+        transaction.onerror = () => {
+
+            reject(transaction.error);
+            db.close();
+
+        };
 
     });
+
 }
 
 // =====================================
-// 5. INITIALIZE PRODUCTS + MIGRATION
+// 8. INITIALIZE PRODUCTS + MIGRATION
 // =====================================
 
 async function initializeProducts() {
@@ -135,11 +270,15 @@ async function initializeProducts() {
             let oldProducts = [];
 
             try {
+
                 oldProducts = JSON.parse(
                     localStorage.getItem(PRODUCT_KEY) || "[]"
                 );
+
             } catch (error) {
+
                 oldProducts = [];
+
             }
 
             const initialProducts =
@@ -148,10 +287,13 @@ async function initializeProducts() {
                     : defaultProducts;
 
             for (const product of initialProducts) {
+
                 await saveProduct(product);
+
             }
 
             localStorage.removeItem(PRODUCT_KEY);
+
         }
 
         return await getProducts();
@@ -161,11 +303,13 @@ async function initializeProducts() {
         console.error("Product database error:", error);
 
         return defaultProducts;
+
     }
+
 }
 
 // =====================================
-// 6. CART FUNCTIONS
+// 9. CART FUNCTIONS
 // =====================================
 
 function getCart() {
@@ -181,7 +325,9 @@ function getCart() {
     } catch (error) {
 
         return [];
+
     }
+
 }
 
 function saveCart(cart) {
@@ -192,63 +338,29 @@ function saveCart(cart) {
     );
 
     updateCartCount();
+
 }
 
 // =====================================
-// 7. IMAGE PATH
-// =====================================
-
-function getImagePath(image) {
-
-    if (!image) {
-        return "https://placehold.co/600x400?text=Fresh+Juice";
-    }
-
-    image = String(image).trim();
-
-    if (
-        image.startsWith("https://") ||
-        image.startsWith("http://") ||
-        image.startsWith("data:") ||
-        image.startsWith("blob:")
-    ) {
-        return image;
-    }
-
-    return image.startsWith("/")
-        ? image
-        : "./" + image.replace(/^\.\/+/, "");
-}
-
-// =====================================
-// 8. IMAGE ERROR
-// =====================================
-
-function imageError(img) {
-
-    img.onerror = null;
-
-    img.src =
-        "https://placehold.co/600x400?text=Fresh+Juice";
-}
-
-// =====================================
-// 9. ESCAPE HTML
+// 10. ESCAPE HTML
 // =====================================
 
 function escapeHTML(value) {
 
     return String(value ?? "").replace(/[&<>"']/g, char => ({
+
         "&": "&amp;",
         "<": "&lt;",
         ">": "&gt;",
         '"': "&quot;",
         "'": "&#039;"
+
     })[char]);
+
 }
 
 // =====================================
-// 10. MOBILE MENU
+// 11. MOBILE MENU
 // =====================================
 
 function toggleMenu() {
@@ -256,28 +368,38 @@ function toggleMenu() {
     const navbar = document.getElementById("navbar");
 
     if (navbar) {
+
         navbar.classList.toggle("show");
+
     }
+
 }
 
 // =====================================
-// 11. UPDATE CART COUNT
+// 12. UPDATE CART COUNT
 // =====================================
 
 function updateCartCount() {
 
     const count = getCart().reduce(
-        (sum, item) => sum + (Number(item.quantity) || 0),
+
+        (sum, item) =>
+            sum + (Number(item.quantity) || 0),
+
         0
+
     );
 
     document.querySelectorAll(".cart-count").forEach(element => {
+
         element.textContent = count;
+
     });
+
 }
 
 // =====================================
-// 12. CART SUCCESS MESSAGE
+// 13. CART SUCCESS MESSAGE
 // =====================================
 
 let cartToastTimer;
@@ -310,8 +432,15 @@ function showCartToast(productName) {
         `;
 
         toast.innerHTML = `
+
             <button id="freshToastClose"
-                style="float:right;border:0;background:none;font-size:23px;cursor:pointer">
+                style="
+                    float:right;
+                    border:0;
+                    background:none;
+                    font-size:23px;
+                    cursor:pointer;
+                ">
                 ×
             </button>
 
@@ -323,57 +452,83 @@ function showCartToast(productName) {
                 style="color:#666;font-size:14px;line-height:1.5">
             </p>
 
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:15px">
+            <div style="
+                display:flex;
+                justify-content:space-between;
+                align-items:center;
+                gap:8px;
+                margin-top:15px;
+            ">
+
                 <span id="freshToastCount"
-                    style="font-size:12px;color:#398342;font-weight:bold">
+                    style="
+                        font-size:12px;
+                        color:#398342;
+                        font-weight:bold;
+                    ">
                 </span>
 
-                <a href="./cart.html"
-                    style="background:#f28c28;color:white;padding:9px 14px;border-radius:25px;text-decoration:none;font-size:12px">
+                <a href="/cart.html"
+                    style="
+                        background:#f28c28;
+                        color:white;
+                        padding:9px 14px;
+                        border-radius:25px;
+                        text-decoration:none;
+                        font-size:12px;
+                    ">
                     View Cart →
                 </a>
+
             </div>
+
         `;
 
         document.body.appendChild(toast);
 
         document.getElementById("freshToastClose")
             .addEventListener("click", closeCartToast);
+
     }
 
-    const message = document.getElementById("toast-message")
-        || document.getElementById("freshToastMessage");
+    const message = document.getElementById("freshToastMessage");
 
-    const count = document.getElementById("toast-count")
-        || document.getElementById("freshToastCount");
+    const count = document.getElementById("freshToastCount");
 
     if (message) {
+
         message.textContent =
             productName + " has been added to your cart.";
+
     }
 
     const total = getCart().reduce(
-        (sum, item) => sum + Number(item.quantity || 0),
+
+        (sum, item) =>
+            sum + Number(item.quantity || 0),
+
         0
+
     );
 
     if (count) {
+
         count.textContent = `🛒 ${total} items in your cart`;
+
     }
 
     clearTimeout(cartToastTimer);
-
-    toast.classList.add("show");
 
     toast.style.opacity = "1";
     toast.style.visibility = "visible";
     toast.style.transform = "translateY(0)";
 
     cartToastTimer = setTimeout(closeCartToast, 3500);
+
 }
 
 // =====================================
-// 13. CLOSE CART MESSAGE
+// 14. CLOSE CART MESSAGE
 // =====================================
 
 function closeCartToast() {
@@ -382,29 +537,32 @@ function closeCartToast() {
 
     if (!toast) return;
 
-    toast.classList.remove("show");
-
     toast.style.opacity = "0";
     toast.style.visibility = "hidden";
     toast.style.transform = "translateY(-15px)";
 
     clearTimeout(cartToastTimer);
+
 }
 
 // =====================================
-// 14. PRODUCT CARD
+// 15. PRODUCT CARD
 // =====================================
 
 function productCard(product) {
 
     const image = escapeHTML(getImagePath(product.image));
+
     const name = escapeHTML(product.name);
+
     const description = escapeHTML(product.description);
+
     const id = escapeHTML(product.id);
 
     const price = Number(product.price) || 0;
 
     return `
+
         <div class="product-card">
 
             <img
@@ -428,7 +586,9 @@ function productCard(product) {
                     <button
                         class="add-btn"
                         onclick="addToCart('${id}')">
+
                         Add to Cart +
+
                     </button>
 
                 </div>
@@ -436,22 +596,27 @@ function productCard(product) {
             </div>
 
         </div>
+
     `;
+
 }
 
 // =====================================
-// 15. DISPLAY PRODUCTS
+// 16. DISPLAY PRODUCTS
 // =====================================
 
 async function displayProducts() {
 
     const products = await getProducts();
 
-    const featured = document.getElementById("featured-products");
+    const featured =
+        document.getElementById("featured-products");
 
-    const all = document.getElementById("all-products");
+    const all =
+        document.getElementById("all-products");
 
-    const empty = document.getElementById("empty-products");
+    const empty =
+        document.getElementById("empty-products");
 
     if (featured) {
 
@@ -459,6 +624,7 @@ async function displayProducts() {
             .slice(0, 3)
             .map(productCard)
             .join("");
+
     }
 
     if (all) {
@@ -468,61 +634,88 @@ async function displayProducts() {
             .join("");
 
         if (empty) {
+
             empty.hidden = products.length !== 0;
+
         }
+
     }
+
 }
 
 // =====================================
-// 16. ADD TO CART
+// 17. ADD TO CART
 // =====================================
 
 async function addToCart(id) {
 
-    const products = await getProducts();
+    try {
 
-    const product = products.find(
-        item => String(item.id) === String(id)
-    );
+        const products = await getProducts();
 
-    if (!product) {
-        alert("Product not found!");
-        return;
+        const product = products.find(
+
+            item => String(item.id) === String(id)
+
+        );
+
+        if (!product) {
+
+            alert("Product not found!");
+
+            return;
+
+        }
+
+        const cart = getCart();
+
+        const existing = cart.find(
+
+            item => String(item.id) === String(id)
+
+        );
+
+        if (existing) {
+
+            existing.quantity =
+                (Number(existing.quantity) || 0) + 1;
+
+        } else {
+
+            cart.push({
+
+                id: product.id,
+                quantity: 1
+
+            });
+
+        }
+
+        saveCart(cart);
+
+        showCartToast(product.name);
+
+    } catch (error) {
+
+        console.error("Add to cart error:", error);
+
+        alert("Unable to add product to cart.");
+
     }
 
-    const cart = getCart();
-
-    const existing = cart.find(
-        item => String(item.id) === String(id)
-    );
-
-    if (existing) {
-
-        existing.quantity =
-            (Number(existing.quantity) || 0) + 1;
-
-    } else {
-
-        cart.push({
-            id: product.id,
-            quantity: 1
-        });
-    }
-
-    saveCart(cart);
-
-    showCartToast(product.name);
 }
 
 // =====================================
-// 17. DISPLAY CART
+// 18. DISPLAY CART
 // =====================================
 
 async function displayCart() {
 
-    const container = document.getElementById("cart-items");
+    const container =
+        document.getElementById("cart-items");
 
-    const summary = document.getElementById("cart-summary");
+    const summary =
+        document.getElementById("cart-summary");
 
     if (!container || !summary) return;
 
@@ -531,9 +724,13 @@ async function displayCart() {
     let cart = getCart();
 
     cart = cart.filter(item =>
+
         products.some(product =>
+
             String(product.id) === String(item.id)
+
         )
+
     );
 
     saveCart(cart);
@@ -541,18 +738,25 @@ async function displayCart() {
     if (cart.length === 0) {
 
         container.innerHTML = `
+
             <div class="empty-cart">
+
                 <h2>🛒 Your Cart is Empty</h2>
+
                 <p>Add your favourite fresh juices!</p>
-                <a href="./products.html" class="btn">
+
+                <a href="/products.html" class="btn">
                     Shop Now
                 </a>
+
             </div>
+
         `;
 
         summary.hidden = true;
 
         return;
+
     }
 
     summary.hidden = false;
@@ -562,7 +766,9 @@ async function displayCart() {
     container.innerHTML = cart.map(item => {
 
         const product = products.find(
+
             p => String(p.id) === String(item.id)
+
         );
 
         if (!product) return "";
@@ -570,8 +776,10 @@ async function displayCart() {
         const price = Number(product.price) || 0;
 
         const quantity = Math.max(
+
             1,
             Number(item.quantity) || 1
+
         );
 
         const subtotal = price * quantity;
@@ -581,6 +789,7 @@ async function displayCart() {
         const id = escapeHTML(item.id);
 
         return `
+
             <div class="cart-row">
 
                 <img
@@ -611,7 +820,9 @@ async function displayCart() {
                     <button
                         class="remove-btn"
                         onclick="removeFromCart('${id}')">
+
                         Remove
+
                     </button>
 
                 </div>
@@ -619,19 +830,25 @@ async function displayCart() {
                 <strong>₹${subtotal.toFixed(2)}</strong>
 
             </div>
+
         `;
 
     }).join("");
 
-    const totalElement = document.getElementById("cart-total");
+    const totalElement =
+        document.getElementById("cart-total");
 
     if (totalElement) {
-        totalElement.textContent = "₹" + total.toFixed(2);
+
+        totalElement.textContent =
+            "₹" + total.toFixed(2);
+
     }
+
 }
 
 // =====================================
-// 18. CHANGE QUANTITY
+// 19. CHANGE QUANTITY
 // =====================================
 
 function changeQuantity(id, change) {
@@ -639,7 +856,9 @@ function changeQuantity(id, change) {
     const cart = getCart();
 
     const item = cart.find(
+
         p => String(p.id) === String(id)
+
     );
 
     if (!item) return;
@@ -648,31 +867,37 @@ function changeQuantity(id, change) {
         (Number(item.quantity) || 0) + change;
 
     const updated = cart.filter(
+
         p => p.quantity > 0
+
     );
 
     saveCart(updated);
 
     displayCart();
+
 }
 
 // =====================================
-// 19. REMOVE FROM CART
+// 20. REMOVE FROM CART
 // =====================================
 
 function removeFromCart(id) {
 
     const updated = getCart().filter(
+
         item => String(item.id) !== String(id)
+
     );
 
     saveCart(updated);
 
     displayCart();
+
 }
 
 // =====================================
-// 20. WHATSAPP ORDER
+// 21. WHATSAPP ORDER
 // =====================================
 
 async function orderWhatsApp() {
@@ -682,8 +907,11 @@ async function orderWhatsApp() {
     const products = await getProducts();
 
     if (cart.length === 0) {
+
         alert("Your cart is empty!");
+
         return;
+
     }
 
     let total = 0;
@@ -694,7 +922,9 @@ async function orderWhatsApp() {
     cart.forEach(item => {
 
         const product = products.find(
+
             p => String(p.id) === String(item.id)
+
         );
 
         if (!product) return;
@@ -706,6 +936,7 @@ async function orderWhatsApp() {
 
         message +=
             `${product.name} x ${item.quantity} = ₹${subtotal.toFixed(2)}\n`;
+
     });
 
     message += `\nTotal Amount: ₹${total.toFixed(2)}`;
@@ -713,18 +944,24 @@ async function orderWhatsApp() {
     message += "\n\nPlease confirm my order.";
 
     window.open(
+
         "https://wa.me/919724307705?text=" +
         encodeURIComponent(message),
+
         "_blank",
         "noopener"
+
     );
+
 }
 
 // =====================================
-// 21. WEBSITE INITIALIZATION
+// 22. WEBSITE INITIALIZATION
 // =====================================
 
 document.addEventListener("DOMContentLoaded", async () => {
+
+    console.log("ZivaGo website initialized.");
 
     updateCartCount();
 
@@ -738,8 +975,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     } catch (error) {
 
-        console.error("Website initialization error:", error);
+        console.error(
+            "Website initialization error:",
+            error
+        );
 
     }
 
 });
+
+// =====================================
+// END OF SCRIPT.JS
+// =====================================
