@@ -1,3 +1,4 @@
+
 const PRODUCT_KEY = "freshsip_products";
 const CART_KEY = "freshsip_cart";
 
@@ -11,57 +12,132 @@ const defaultProducts = [
         name: "Fresh Orange Juice",
         price: 99,
         description: "Fresh and refreshing orange juice.",
-        image: "two.jpg"
+        image: "/two.jpg"
     },
     {
         id: 2,
-        name: "jaykarad",
+        name: "Fresh Watermelon Juice",
         price: 79,
         description: "Sweet and refreshing watermelon juice.",
-        image: "two.jpg"
+        image: "/watermelon.jpg"
     }
 ];
 
-// Initialize products only once
-if (!localStorage.getItem(PRODUCT_KEY)) {
-    localStorage.setItem(PRODUCT_KEY, JSON.stringify(defaultProducts));
+// =====================================
+// 2. INITIALIZE PRODUCTS
+// =====================================
+
+function initializeProducts() {
+
+    if (!localStorage.getItem(PRODUCT_KEY)) {
+        localStorage.setItem(
+            PRODUCT_KEY,
+            JSON.stringify(defaultProducts)
+        );
+    }
 }
 
+initializeProducts();
+
 // =====================================
-// 2. GET PRODUCTS AND CART
+// 3. GET PRODUCTS
 // =====================================
 
 function getProducts() {
+
     try {
-        return JSON.parse(localStorage.getItem(PRODUCT_KEY)) || [];
+        const products = JSON.parse(
+            localStorage.getItem(PRODUCT_KEY)
+        );
+
+        return Array.isArray(products) ? products : defaultProducts;
+
     } catch (error) {
-        return [];
+        return defaultProducts;
     }
 }
 
+// =====================================
+// 4. GET CART
+// =====================================
+
 function getCart() {
+
     try {
-        return JSON.parse(localStorage.getItem(CART_KEY)) || [];
+        const cart = JSON.parse(
+            localStorage.getItem(CART_KEY)
+        );
+
+        return Array.isArray(cart) ? cart : [];
+
     } catch (error) {
         return [];
     }
 }
 
 // =====================================
-// 3. SAVE CART
+// 5. SAVE CART
 // =====================================
 
 function saveCart(cart) {
-    localStorage.setItem(CART_KEY, JSON.stringify(cart));
+
+    localStorage.setItem(
+        CART_KEY,
+        JSON.stringify(cart)
+    );
+
     updateCartCount();
 }
 
 // =====================================
-// 4. ESCAPE HTML
+// 6. IMAGE PATH FIX FOR VERCEL
+// =====================================
+
+function getImagePath(image) {
+
+    if (!image) {
+        return "https://placehold.co/600x400?text=Fresh+Juice";
+    }
+
+    image = String(image).trim();
+
+    // External image URLs
+    if (
+        image.startsWith("https://") ||
+        image.startsWith("http://") ||
+        image.startsWith("data:")
+    ) {
+        return image;
+    }
+
+    // Root-relative image paths
+    if (image.startsWith("/")) {
+        return image;
+    }
+
+    // Relative paths become root-relative
+    return "/" + image.replace(/^\.\/+/, "");
+}
+
+// =====================================
+// 7. IMAGE ERROR HANDLER
+// =====================================
+
+function imageError(image) {
+
+    image.onerror = null;
+
+    image.src =
+        "https://placehold.co/600x400?text=Fresh+Juice";
+}
+
+// =====================================
+// 8. ESCAPE HTML
 // =====================================
 
 function escapeHTML(value) {
-    return String(value).replace(/[&<>"']/g, char => ({
+
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
         "&": "&amp;",
         "<": "&lt;",
         ">": "&gt;",
@@ -71,18 +147,24 @@ function escapeHTML(value) {
 }
 
 // =====================================
-// 5. MOBILE MENU
+// 9. MOBILE MENU
 // =====================================
 
 function toggleMenu() {
-    document.getElementById("navbar")?.classList.toggle("show");
+
+    const navbar = document.getElementById("navbar");
+
+    if (navbar) {
+        navbar.classList.toggle("show");
+    }
 }
 
 // =====================================
-// 6. UPDATE CART COUNT
+// 10. UPDATE CART COUNT
 // =====================================
 
 function updateCartCount() {
+
     const count = getCart().reduce(
         (sum, item) => sum + (Number(item.quantity) || 0),
         0
@@ -92,20 +174,24 @@ function updateCartCount() {
         el.textContent = count;
     });
 
-    const popupCount = document.getElementById("popupCartCount");
+    const popupCount =
+        document.getElementById("popupCartCount");
 
     if (popupCount) {
-        popupCount.textContent = `🛒 ${count} items in your cart`;
+        popupCount.textContent =
+            `🛒 ${count} items in your cart`;
     }
 }
 
 // =====================================
-// 7. CREATE RESPONSIVE CART POPUP
+// 11. CREATE CART POPUP
 // =====================================
 
 function createCartPopup() {
 
-    if (document.getElementById("cartSuccessPopup")) return;
+    if (document.getElementById("cartSuccessPopup")) {
+        return;
+    }
 
     const popup = document.createElement("div");
 
@@ -119,7 +205,7 @@ function createCartPopup() {
         <button
             class="popup-close"
             id="popupClose"
-            aria-label="Close notification">
+            aria-label="Close">
             &times;
         </button>
 
@@ -137,7 +223,7 @@ function createCartPopup() {
         <p
             class="popup-description"
             id="popupProductName">
-            Your fresh juice has been added to your shopping cart.
+            Your fresh juice has been added.
         </p>
 
         <div class="popup-divider"></div>
@@ -150,7 +236,7 @@ function createCartPopup() {
                 🛒 0 items in your cart
             </span>
 
-            <a href="cart.html" class="popup-view-cart">
+            <a href="/cart.html" class="popup-view-cart">
                 View Cart →
             </a>
 
@@ -166,14 +252,15 @@ function createCartPopup() {
 }
 
 // =====================================
-// 8. CLOSE CART POPUP
+// 12. CLOSE CART POPUP
 // =====================================
 
 let popupTimer;
 
 function closeCartPopup() {
 
-    const popup = document.getElementById("cartSuccessPopup");
+    const popup =
+        document.getElementById("cartSuccessPopup");
 
     if (popup) {
         popup.classList.remove("active");
@@ -183,16 +270,15 @@ function closeCartPopup() {
 }
 
 // =====================================
-// 9. SHOW CART SUCCESS MESSAGE
+// 13. SHOW CART POPUP
 // =====================================
 
 function showCartToast(productName) {
 
     createCartPopup();
 
-    const popup = document.getElementById("cartSuccessPopup");
-
-    if (!popup) return;
+    const popup =
+        document.getElementById("cartSuccessPopup");
 
     const productMessage =
         document.getElementById("popupProductName");
@@ -200,8 +286,10 @@ function showCartToast(productName) {
     const cartCount =
         document.getElementById("popupCartCount");
 
+    if (!popup) return;
+
     productMessage.textContent =
-        productName + " has been added to your shopping cart.";
+        productName + " has been added to your cart.";
 
     const totalItems = getCart().reduce(
         (sum, item) => sum + Number(item.quantity || 0),
@@ -225,15 +313,22 @@ function showCartToast(productName) {
 }
 
 // =====================================
-// 10. PRODUCT CARD
+// 14. PRODUCT CARD
 // =====================================
 
 function productCard(product) {
 
-    const image = escapeHTML(product.image);
+    const image = escapeHTML(
+        getImagePath(product.image)
+    );
+
     const name = escapeHTML(product.name);
-    const description = escapeHTML(product.description);
+
+    const description =
+        escapeHTML(product.description);
+
     const price = Number(product.price) || 0;
+
     const id = escapeHTML(product.id);
 
     return `
@@ -242,7 +337,8 @@ function productCard(product) {
             <img
                 src="${image}"
                 alt="${name}"
-                onerror="this.src='https://placehold.co/600x400?text=Fresh+Juice'">
+                loading="lazy"
+                onerror="imageError(this)">
 
             <div class="product-info">
 
@@ -273,7 +369,7 @@ function productCard(product) {
 }
 
 // =====================================
-// 11. DISPLAY PRODUCTS
+// 15. DISPLAY PRODUCTS
 // =====================================
 
 function displayProducts() {
@@ -289,17 +385,21 @@ function displayProducts() {
     const empty =
         document.getElementById("empty-products");
 
-    // Home page products
+    // Homepage
     if (featured) {
-        featured.innerHTML =
-            products.slice(0, 3).map(productCard).join("");
+
+        featured.innerHTML = products
+            .slice(0, 3)
+            .map(productCard)
+            .join("");
     }
 
     // Products page
     if (all) {
 
-        all.innerHTML =
-            products.map(productCard).join("");
+        all.innerHTML = products
+            .map(productCard)
+            .join("");
 
         if (empty) {
             empty.hidden = products.length !== 0;
@@ -308,7 +408,7 @@ function displayProducts() {
 }
 
 // =====================================
-// 12. ADD TO CART WITHOUT REDIRECT
+// 16. ADD TO CART
 // =====================================
 
 function addToCart(id) {
@@ -341,17 +441,13 @@ function addToCart(id) {
         });
     }
 
-    // Save product in cart
     saveCart(cart);
 
-    // Show success popup
     showCartToast(product.name);
-
-    // Do not redirect
 }
 
 // =====================================
-// 13. DISPLAY CART PAGE
+// 17. DISPLAY CART
 // =====================================
 
 function displayCart() {
@@ -364,23 +460,19 @@ function displayCart() {
 
     if (!container || !summary) return;
 
-    const cart = getCart();
-
     const products = getProducts();
 
-    // Remove invalid cart products
-    const validCart = cart.filter(item =>
+    let cart = getCart();
+
+    cart = cart.filter(item =>
         products.some(
             p => String(p.id) === String(item.id)
         )
     );
 
-    if (validCart.length !== cart.length) {
-        saveCart(validCart);
-    }
+    saveCart(cart);
 
-    // Empty cart
-    if (validCart.length === 0) {
+    if (cart.length === 0) {
 
         container.innerHTML = `
             <div class="empty-cart">
@@ -389,7 +481,7 @@ function displayCart() {
 
                 <p>Add your favourite fresh juices!</p>
 
-                <a href="products.html" class="btn">
+                <a href="/products.html" class="btn">
                     Shop Now
                 </a>
 
@@ -405,7 +497,7 @@ function displayCart() {
 
     let total = 0;
 
-    container.innerHTML = validCart.map(item => {
+    container.innerHTML = cart.map(item => {
 
         const product = products.find(
             p => String(p.id) === String(item.id)
@@ -430,8 +522,9 @@ function displayCart() {
             <div class="cart-row">
 
                 <img
-                    src="${escapeHTML(product.image)}"
-                    alt="${escapeHTML(product.name)}">
+                    src="${escapeHTML(getImagePath(product.image))}"
+                    alt="${escapeHTML(product.name)}"
+                    onerror="imageError(this)">
 
                 <div class="cart-details">
 
@@ -480,7 +573,7 @@ function displayCart() {
 }
 
 // =====================================
-// 14. CHANGE QUANTITY
+// 18. CHANGE QUANTITY
 // =====================================
 
 function changeQuantity(id, change) {
@@ -506,7 +599,7 @@ function changeQuantity(id, change) {
 }
 
 // =====================================
-// 15. REMOVE FROM CART
+// 19. REMOVE PRODUCT
 // =====================================
 
 function removeFromCart(id) {
@@ -521,7 +614,7 @@ function removeFromCart(id) {
 }
 
 // =====================================
-// 16. WHATSAPP ORDER
+// 20. WHATSAPP ORDER
 // =====================================
 
 function orderWhatsApp() {
@@ -575,7 +668,7 @@ function orderWhatsApp() {
 }
 
 // =====================================
-// 17. INITIALIZE WEBSITE
+// 21. INITIALIZE WEBSITE
 // =====================================
 
 document.addEventListener("DOMContentLoaded", () => {
