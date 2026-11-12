@@ -1,0 +1,656 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>ZivaGO | Fresh & Natural Juices</title>
+
+  <link rel="stylesheet" href="style.css">
+
+  <style>
+
+    /* ==============================
+       ADD TO CART TOAST
+    ============================== */
+
+    .cart-toast {
+      position: fixed;
+      top: 25px;
+      right: 25px;
+      width: 370px;
+      max-width: calc(100% - 30px);
+      background: #fff;
+      border-radius: 18px;
+      padding: 20px;
+      z-index: 99999;
+      box-shadow: 0 15px 45px rgba(0,0,0,.16);
+      border: 1px solid #e8eee8;
+      border-top: 5px solid #398342;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-25px) scale(.95);
+      transition: all .35s ease;
+    }
+
+    .cart-toast.show {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0) scale(1);
+    }
+
+    .toast-icon {
+      width: 48px;
+      height: 48px;
+      min-width: 48px;
+      background: #e8f7e9;
+      color: #398342;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 27px;
+      font-weight: bold;
+    }
+
+    .toast-content {
+      flex: 1;
+    }
+
+    .toast-content strong {
+      display: block;
+      color: #243b2c;
+      font-size: 16px;
+      font-weight: 800;
+      margin: 2px 0 6px;
+    }
+
+    .toast-content p {
+      color: #777;
+      font-size: 13px;
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    .toast-close {
+      border: none;
+      background: transparent;
+      color: #999;
+      font-size: 22px;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .toast-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 16px;
+      padding-top: 13px;
+      border-top: 1px solid #eee;
+      gap: 8px;
+    }
+
+    .toast-cart-count {
+      font-size: 12px;
+      color: #398342;
+      font-weight: 700;
+    }
+
+    .toast-cart-link {
+      display: inline-block;
+      text-decoration: none;
+      background: #f28c28;
+      color: white;
+      padding: 9px 15px;
+      border-radius: 30px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .toast-progress {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 3px;
+      width: 100%;
+      background: #f28c28;
+      transform-origin: left;
+    }
+
+    .cart-toast.show .toast-progress {
+      animation: toastProgress 3.5s linear forwards;
+    }
+
+    @keyframes toastProgress {
+      from { transform: scaleX(1); }
+      to { transform: scaleX(0); }
+    }
+
+
+    /* ==============================
+       PREMIUM FOOTER
+    ============================== */
+
+    footer.footer {
+      background: #0b211a !important;
+      color: #d0d5d1;
+      width: 100%;
+      margin: 0;
+      padding: 85px 8% 0;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    .footer .footer-container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      column-gap: 100px;
+      align-items: start;
+      padding-bottom: 75px;
+    }
+
+    .footer .footer-column {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      text-align: left !important;
+      justify-content: flex-start;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    .footer .footer-column h3 {
+      display: block;
+      width: 100%;
+      color: #f5cf75;
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-align: left !important;
+      margin: 0 0 26px 0;
+      padding: 0;
+    }
+
+    .footer .footer-column a {
+      display: block;
+      width: fit-content;
+      max-width: 100%;
+      color: #d0d5d1;
+      text-decoration: none;
+      text-align: left !important;
+      font-size: 20px;
+      line-height: 1.5;
+      margin: 0 0 12px 0;
+      padding: 0;
+      transition: color .3s ease, transform .3s ease;
+    }
+
+    .footer .footer-column a:hover {
+      color: #f5cf75;
+      transform: translateX(5px);
+    }
+
+    .footer .footer-bottom {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      border-top: 1px solid rgba(255,255,255,.15);
+      padding: 35px 0 25px;
+      text-align: center;
+      box-sizing: border-box;
+    }
+
+    .footer .footer-bottom p {
+      color: #c5cec8;
+      font-size: 14px;
+      margin: 0;
+      text-align: center;
+    }
+
+
+    /* ==============================
+       HOW TO CONSUME IMAGE
+    ============================== */
+
+    .consume-section {
+      width: 100%;
+      padding: 45px 5%;
+      background: #f4f8ee;
+      box-sizing: border-box;
+    }
+
+    .consume-image {
+      display: block;
+      width: 100%;
+      max-width: 1350px;
+      height: auto;
+      margin: 0 auto;
+      border-radius: 18px;
+      box-shadow: 0 12px 35px rgba(20, 50, 30, .12);
+    }
+
+
+    /* ==============================
+       MOBILE RESPONSIVE
+    ============================== */
+
+    @media(max-width: 768px) {
+
+      footer.footer {
+        padding: 55px 7% 0;
+      }
+
+      .footer .footer-container {
+        grid-template-columns: 1fr 1fr;
+        column-gap: 25px;
+        padding-bottom: 45px;
+      }
+
+      .footer .footer-column h3 {
+        font-size: 14px;
+        margin-bottom: 20px;
+      }
+
+      .footer .footer-column a {
+        font-size: 15px;
+        overflow-wrap: anywhere;
+      }
+
+      .consume-section {
+        padding: 25px 3%;
+      }
+
+      .consume-image {
+        border-radius: 10px;
+      }
+    }
+
+    @media(max-width: 480px) {
+
+      .footer .footer-container {
+        grid-template-columns: 1fr;
+        row-gap: 30px;
+      }
+
+      .footer .footer-column h3 {
+        font-size: 15px;
+      }
+
+      .footer .footer-column a {
+        font-size: 17px;
+      }
+
+      .footer .footer-bottom {
+        padding: 25px 0;
+      }
+
+      .cart-toast {
+        top: 15px;
+        right: 15px;
+        left: 15px;
+        width: auto;
+        padding: 16px;
+      }
+
+      .toast-content strong {
+        font-size: 14px;
+      }
+
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+  <!-- ANNOUNCEMENT BAR -->
+
+  <div class="announcement-bar">
+
+    <span>Freshly made juices · Order directly on</span>
+
+    <a href="https://wa.me/919724307705"
+       target="_blank" rel="noopener">
+      WhatsApp
+    </a>
+
+  </div>
+
+
+  <!-- HEADER -->
+
+  <header class="header">
+
+    <a href="index.html" class="logo">
+      🍊 Ziva<span>GO</span>
+    </a>
+
+    <button class="menu-btn"
+      onclick="toggleMenu()"
+      aria-label="Toggle navigation">
+      ☰
+    </button>
+
+    <nav id="navbar">
+
+      <a class="active" href="index.html">Home</a>
+
+      <a href="products.html">Products</a>
+
+      <a href="about.html">About Us</a>
+
+      <a href="contact.html">Contact</a>
+
+      <a href="cart.html" class="cart-nav">
+        🛒 Cart
+        <span class="cart-count" id="cartCount">0</span>
+      </a>
+
+    </nav>
+
+  </header>
+
+
+  <!-- HERO SECTION -->
+
+  <section class="hero">
+
+    <div class="hero-content">
+
+      <span class="tag">100% FRESH & NATURAL</span>
+
+      <h1>
+        Freshness in<br>
+        Every <span>Sip!</span>
+      </h1>
+
+      <p>
+        Enjoy delicious, refreshing and naturally fresh juices
+        made with love. Fresh fruits, natural taste and happiness
+        in every glass.
+      </p>
+
+      <a href="products.html" class="btn">
+        Shop Fresh Juices →
+      </a>
+
+    </div>
+
+    <div class="hero-image">
+      <img src="images\logo2.jpg" alt="Fresh orange juice">
+    </div>
+
+  </section>
+
+
+  <!-- FEATURED PRODUCTS -->
+
+  <section class="section">
+
+    <div class="section-heading">
+
+      <span class="tag">OUR COLLECTION</span>
+
+      <h2>Fresh & Delicious Juices</h2>
+
+      <p>
+        Discover your favourite refreshing drinks.
+        Made with fresh ingredients and natural goodness.
+      </p>
+
+    </div>
+
+    <div class="product-grid" id="featured-products"></div>
+
+    <div class="center">
+
+      <a href="products.html" class="btn">
+        View All Products →
+      </a>
+
+    </div>
+
+  </section>
+  <>
+
+<!-- HOW TO CONSUME SECTION -->
+
+<section class="consume-section">
+
+    <div class="consume-container">
+
+        <div class="consume-heading">
+            <span>🌿 ZIVAGO SEA BUCKTHORN JUICE</span>
+            <h2>How to Consume</h2>
+            <p>A simple way to enjoy your daily Sea Buckthorn Juice.</p>
+        </div>
+
+        <div class="consume-main">
+
+            <div class="consume-dose">
+                <span>DAILY SERVING</span>
+                <h3>1 Spoon</h3>
+                <h2>15 ml</h2>
+                <p>Once a day</p>
+            </div>
+
+            <div class="consume-steps">
+
+                <div class="consume-step">
+                    <div class="step-number">01</div>
+                    <div>
+                        <h3>Take 1 Spoon</h3>
+                        <p>Take 15 ml of ZivaGo Sea Buckthorn Juice.</p>
+                    </div>
+                </div>
+
+                <div class="consume-step">
+                    <div class="step-number">02</div>
+                    <div>
+                        <h3>Mix with Water</h3>
+                        <p>Add 150–200 ml of water to the juice.</p>
+                    </div>
+                </div>
+
+                <div class="consume-step">
+                    <div class="step-number">03</div>
+                    <div>
+                        <h3>Stir Well and Drink</h3>
+                        <p>Mix properly and enjoy once a day.</p>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="consume-info">
+
+            <div class="info-item">
+                <span>🌅</span>
+                <h3>Best Time</h3>
+                <p>Morning or as per your convenience.</p>
+            </div>
+
+            <div class="info-item">
+                <span>👨‍👩‍👧</span>
+                <h3>Suitable For</h3>
+                <p>Adults, subject to product label directions.</p>
+            </div>
+
+            <div class="info-item">
+                <span>🌿</span>
+                <h3>Daily Routine</h3>
+                <p>Use regularly as directed on the product label.</p>
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+  
+
+
+
+  <!-- FOOTER -->
+
+  <footer class="footer">
+
+    <div class="footer-container">
+
+      <!-- EXPLORE -->
+
+      <div class="footer-column">
+
+        <h3>EXPLORE</h3>
+
+        <a href="index.html">Home</a>
+
+        <a href="products.html">Shop</a>
+
+        <a href="about.html">About</a>
+
+        <a href="contact.html">Contact</a>
+
+      </div>
+
+
+      <!-- REACH US -->
+
+      <div class="footer-column">
+
+        <h3>REACH US</h3>
+
+        <a href="https://wa.me/919724307705"
+           target="_blank" rel="noopener">
+          +91 9724307705
+        </a>
+
+        <a href="mailto:sandeepyadav334002@gmail.com">
+          Zivagoworld@gmail.com
+        </a>
+
+      </div>
+
+    </div>
+
+
+    <!-- COPYRIGHT -->
+
+    <div class="footer-bottom">
+
+      <p>© 2026 ZivaGO. All Rights Reserved.</p>
+
+    </div>
+
+  </footer>
+
+
+  <!-- ADD TO CART POPUP -->
+
+  <div id="cart-toast" class="cart-toast">
+
+    <div class="toast-icon">✓</div>
+
+    <div class="toast-content">
+
+      <strong>Added to Cart Successfully!</strong>
+
+      <p id="toast-message">
+        Your fresh juice has been added to your shopping cart.
+      </p>
+
+      <div class="toast-bottom">
+
+        <span class="toast-cart-count" id="toast-count">
+          🛒 Cart updated
+        </span>
+
+        <a href="cart.html" class="toast-cart-link">
+          View Cart →
+        </a>
+
+      </div>
+
+    </div>
+
+    <button class="toast-close"
+      onclick="closeCartToast()"
+      aria-label="Close notification">
+      ×
+    </button>
+
+    <div class="toast-progress"></div>
+
+  </div>
+
+
+  <!-- JAVASCRIPT -->
+
+  <script src="script.js"></script>
+
+  <script>
+
+    // Mobile Navigation
+
+    function toggleMenu() {
+      document.getElementById("navbar")
+        ?.classList.toggle("show");
+    }
+
+
+    // Close Cart Notification
+
+    function closeCartToast() {
+      document.getElementById("cart-toast")
+        ?.classList.remove("show");
+    }
+
+
+    // Update Cart Notification
+
+    function updateToastDetails(productName) {
+
+      const message =
+        document.getElementById("toast-message");
+
+      const count =
+        document.getElementById("toast-count");
+
+      if (message) {
+        message.textContent =
+          productName +
+          " has been added to your shopping cart.";
+      }
+
+      if (count && typeof getCart === "function") {
+
+        const total = getCart().reduce(
+          (sum, item) =>
+            sum + Number(item.quantity || 0),
+          0
+        );
+
+        count.textContent =
+          "🛒 " + total + " items in your cart";
+      }
+
+    }
+
+  </script>
+
+</body>
+</html>

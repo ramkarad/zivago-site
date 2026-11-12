@@ -1,0 +1,518 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Cart | ZivaGo</title>
+  <link rel="stylesheet" href="style.css">
+
+  <style>
+    /* UPI PAYMENT MODAL */
+    .payment-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+      padding: 15px;
+    }
+
+    .payment-overlay.show {
+      display: flex;
+    }
+
+    .payment-modal {
+      background: #fff;
+      width: 100%;
+      max-width: 480px;
+      border-radius: 25px;
+      padding: 30px 25px;
+      text-align: center;
+      position: relative;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 15px 50px rgba(0,0,0,0.2);
+      animation: paymentPop 0.3s ease;
+    }
+
+    @keyframes paymentPop {
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .payment-close {
+      position: absolute;
+      top: 15px;
+      right: 18px;
+      width: 38px;
+      height: 38px;
+      border: 1px solid #ddd;
+      border-radius: 50%;
+      background: white;
+      cursor: pointer;
+      font-size: 22px;
+      color: #333;
+    }
+
+    .payment-heading {
+      color: #e87924;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 3px;
+      margin: 12px 0 22px;
+    }
+
+    .payment-modal h2 {
+      font-size: 30px;
+      color: #243b2c;
+      margin-bottom: 20px;
+    }
+
+    .payment-upi {
+      color: #555;
+      font-size: 17px;
+      margin-bottom: 25px;
+      overflow-wrap: anywhere;
+    }
+
+    .payment-upi strong {
+      color: #e87924;
+    }
+
+    .payment-copy {
+      width: 100%;
+      padding: 16px;
+      background: white;
+      border: 2px solid #e5e5e5;
+      border-radius: 40px;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-bottom: 15px;
+      color: #243b2c;
+    }
+
+    .payment-copy:hover {
+      border-color: #e87924;
+      color: #e87924;
+    }
+
+    .payment-open {
+      width: 100%;
+      padding: 17px;
+      border: none;
+      border-radius: 40px;
+      background: #e87924;
+      color: white;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-bottom: 22px;
+      transition: 0.3s;
+    }
+
+    .payment-open:hover {
+      background: #cf6417;
+    }
+
+    .payment-instructions {
+      color: #555;
+      font-size: 15px;
+      line-height: 1.7;
+      margin-bottom: 18px;
+    }
+
+    .payment-warning {
+      background: #f1f8ed;
+      border-radius: 15px;
+      padding: 15px;
+      color: #477346;
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    .payment-continue {
+      width: 100%;
+      padding: 17px;
+      border: 2px solid #4b9b52;
+      border-radius: 40px;
+      background: white;
+      color: #398342;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .payment-continue:hover {
+      background: #398342;
+      color: white;
+    }
+
+    .payment-status {
+      color: #398342;
+      font-size: 13px;
+      margin-top: 12px;
+      min-height: 18px;
+      overflow-wrap: anywhere;
+    }
+
+    @media(max-width: 480px) {
+      .payment-modal {
+        padding: 25px 18px;
+      }
+
+      .payment-modal h2 {
+        font-size: 25px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+<!-- ANNOUNCEMENT BAR -->
+
+  <div class="announcement-bar">
+
+    <span>Freshly made juices · Order directly on</span>
+
+    <a href="https://wa.me/919724307705" target="_blank" rel="noopener">
+      WhatsApp
+    </a>
+
+  </div>
+
+<!-- HEADER -->
+<header class="header">
+  <a href="index.html" class="logo">🍊 Ziva<span>Go</span></a>
+
+  <button class="menu-btn" onclick="toggleMenu()">☰</button>
+
+  <nav id="navbar">
+    <a href="index.html">Home</a>
+    <a href="products.html">Products</a>
+    <a href="about.html">About Us</a>
+    <a href="contact.html">Contact</a>
+
+    <a href="cart.html" class="cart-nav">
+      🛒 Cart
+      <span class="cart-count" id="cartCount">0</span>
+    </a>
+  </nav>
+</header>
+
+<!-- PAGE BANNER -->
+<section class="page-banner">
+  <h1>Your Shopping <span>Cart</span></h1>
+  <p>Fresh juices are waiting for you!</p>
+</section>
+
+<!-- CART SECTION -->
+<section class="section cart-section">
+
+  <div id="cart-items"></div>
+
+  <div class="cart-summary" id="cart-summary">
+
+    <h2>Order Summary</h2>
+
+    <div class="summary-line">
+      <span>Total</span>
+      <strong id="cart-total">₹0</strong>
+    </div>
+
+    <button class="btn whatsapp-btn" onclick="openPayment()">
+      Pay via UPI
+    </button>
+
+    <a href="products.html" class="continue-link">
+      ← Continue Shopping
+    </a>
+
+  </div>
+
+</section>
+
+<!-- UPI PAYMENT POPUP -->
+<div class="payment-overlay" id="payment-overlay">
+
+  <div class="payment-modal">
+
+    <button class="payment-close" onclick="closePayment()">×</button>
+
+    <div class="payment-heading">
+      🍊 ZivaGo | UPI PAYMENT
+    </div>
+
+    <h2>
+      Pay <span id="payment-amount">₹0</span> via UPI
+    </h2>
+
+    <p class="payment-upi">
+      UPI ID:
+      <strong id="upi-display">8734025711@axi</strong>
+    </p>
+
+    <!-- COPY UPI BUTTON -->
+    <button class="payment-copy" onclick="copyUPI()">
+      📋 Copy UPI ID
+    </button>
+
+    <!-- OPEN UPI APP -->
+    <button class="payment-open" onclick="openUPIApp()">
+      Open UPI App to Pay →
+    </button>
+
+    <p class="payment-instructions">
+      Tap the button to open a UPI app on your phone.
+      Complete the payment, return to this page,
+      then continue to WhatsApp and share your payment screenshot.
+    </p>
+
+    <p class="payment-instructions" style="color:#e87924;">
+      Finish paying in your UPI app, then return to ZivaGo.
+    </p>
+
+    <div class="payment-warning">
+      Payment is not verified automatically.
+      We will confirm your payment after checking our UPI account.
+    </div>
+
+    <button class="payment-continue" onclick="continueOrder()">
+      Continue for Order →
+    </button>
+
+    <p class="payment-status" id="payment-status"></p>
+
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+ <!-- ==============================
+       FOOTER
+  ============================== -->
+
+  <footer class="footer">
+
+    <div class="footer-container">
+
+      <!-- EXPLORE -->
+
+      <div class="footer-column">
+
+        <h3>EXPLORE</h3>
+
+        <a href="index.html">Home</a>
+
+        <a href="products.html">Shop</a>
+
+        <a href="about.html">About</a>
+
+        <a href="contact.html">Contact</a>
+
+      </div>
+
+
+      <!-- REACH US -->
+
+      <div class="footer-column">
+
+        <h3>REACH US</h3>
+
+        <a href="https://wa.me/919724307705"
+       target="_blank" rel="noopener">
+      +91 9724307705
+    </a>
+
+        <a href="mailto:sandeepyadav334002@gmail.com">
+          Zivagoworld@gmail.com
+        </a>
+
+        
+
+      </div>
+
+    </div>
+
+
+    <!-- COPYRIGHT -->
+
+    <div class="footer-bottom">
+
+      <p>© 2026 ZivaGO. All Rights Reserved.</p>
+
+    </div>
+
+  </footer>
+
+
+<!-- MAIN SCRIPT -->
+<script src="script.js"></script>
+
+<!-- PAYMENT SCRIPT -->
+<script>
+
+  // ZIVAGO UPI ID
+  const ZIVAGO_UPI_ID = "8734025711@axi";
+
+  // GET CART TOTAL
+  function getPaymentAmount() {
+
+    const totalText =
+      document.getElementById("cart-total").innerText;
+
+    return parseFloat(
+      totalText.replace(/[^\d.]/g, "")
+    ) || 0;
+  }
+
+  // OPEN PAYMENT POPUP
+  function openPayment() {
+
+    const amount = getPaymentAmount();
+
+    if (amount <= 0) {
+      alert("Your cart is empty! Please add products first.");
+      return;
+    }
+
+    document.getElementById("payment-amount").innerText =
+      "₹" + amount.toFixed(2);
+
+    document.getElementById("upi-display").innerText =
+      ZIVAGO_UPI_ID;
+
+    document.getElementById("payment-status").innerText = "";
+
+    document.getElementById("payment-overlay")
+      .classList.add("show");
+  }
+
+  // CLOSE PAYMENT POPUP
+  function closePayment() {
+
+    document.getElementById("payment-overlay")
+      .classList.remove("show");
+  }
+
+  // COPY UPI ID - FIXED
+  async function copyUPI() {
+
+    const status =
+      document.getElementById("payment-status");
+
+    try {
+
+      if (navigator.clipboard && window.isSecureContext) {
+
+        await navigator.clipboard.writeText(ZIVAGO_UPI_ID);
+
+      } else {
+
+        // Fallback copy method
+        const textArea = document.createElement("textarea");
+
+        textArea.value = ZIVAGO_UPI_ID;
+
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px";
+
+        document.body.appendChild(textArea);
+
+        textArea.focus();
+        textArea.select();
+
+        const copied = document.execCommand("copy");
+
+        document.body.removeChild(textArea);
+
+        if (!copied) {
+          throw new Error("Copy failed");
+        }
+      }
+
+      status.innerText =
+        "✓ UPI ID copied successfully!";
+
+    } catch (error) {
+
+      status.innerText =
+        "Copy failed. Please copy manually: " + ZIVAGO_UPI_ID;
+    }
+  }
+
+  // OPEN UPI APP
+  function openUPIApp() {
+
+    const amount = getPaymentAmount();
+
+    if (amount <= 0) {
+      alert("Your cart is empty!");
+      return;
+    }
+
+    const upiLink =
+      "upi://pay?pa=" + encodeURIComponent(ZIVAGO_UPI_ID) +
+      "&pn=" + encodeURIComponent("ZivaGo") +
+      "&am=" + amount.toFixed(2) +
+      "&cu=INR" +
+      "&tn=" + encodeURIComponent("ZivaGo Juice Order");
+
+    window.location.href = upiLink;
+  }
+
+  // CONTINUE TO WHATSAPP
+  function continueOrder() {
+
+    if (getPaymentAmount() <= 0) {
+      alert("Your cart is empty!");
+      return;
+    }
+
+    closePayment();
+
+    if (typeof orderWhatsApp === "function") {
+
+      orderWhatsApp();
+
+    } else {
+
+      alert("WhatsApp ordering function not found in script.js");
+
+    }
+  }
+
+  // CLOSE POPUP WHEN CLICKING OUTSIDE
+  document.getElementById("payment-overlay")
+    .addEventListener("click", function(event) {
+
+      if (event.target === this) {
+        closePayment();
+      }
+
+    });
+
+  // CLOSE POPUP WITH ESCAPE KEY
+  document.addEventListener("keydown", function(event) {
+
+    if (event.key === "Escape") {
+      closePayment();
+    }
+
+  });
+
+</script>
+
+</body>
+</html>
