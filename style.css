@@ -1547,3 +1547,17 @@ textarea {
         transition: none !important;
     }
 }
+.payment-instructions {
+    color: #F28C28;
+    font-weight: bold;
+    background-color: #FFF0D9;
+    padding: 2px 5px;
+    border-radius: 4px;
+}
+.highlight-text {
+    color: #F28C28;
+    font-weight: 700;
+    background: #FFF0D9;
+    padding: 3px 6px;
+    border-radius: 4px;
+}
