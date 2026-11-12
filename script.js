@@ -1,7 +1,7 @@
 
 // =====================================
 // ZIVAGO WEBSITE - COMPLETE SCRIPT.JS
-// VERCEL IMAGE FIX + CART + INDEXEDDB
+// PRODUCT + INDEXEDDB + CART + WHATSAPP
 // =====================================
 
 const PRODUCT_KEY = "freshsip_products";
@@ -37,7 +37,6 @@ const defaultProducts = [
         description: "Sweet and refreshing watermelon juice.",
         image: "/ai.jpg"
     }
-    
 ];
 
 // =====================================
@@ -45,7 +44,6 @@ const defaultProducts = [
 // =====================================
 
 function openProductDB() {
-
     return new Promise((resolve, reject) => {
 
         if (!window.indexedDB) {
@@ -56,33 +54,23 @@ function openProductDB() {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
 
         request.onupgradeneeded = function(event) {
-
             const db = event.target.result;
 
             if (!db.objectStoreNames.contains(STORE_NAME)) {
-
                 db.createObjectStore(STORE_NAME, {
                     keyPath: "id"
                 });
-
             }
-
         };
 
         request.onsuccess = function() {
-
             resolve(request.result);
-
         };
 
         request.onerror = function() {
-
             reject(request.error);
-
         };
-
     });
-
 }
 
 // =====================================
@@ -92,31 +80,23 @@ function openProductDB() {
 function getImagePath(image) {
 
     if (!image) {
-
         return "https://placehold.co/600x400?text=Fresh+Juice";
-
     }
 
     image = String(image).trim();
 
-    // External images
     if (
         image.startsWith("https://") ||
         image.startsWith("http://") ||
         image.startsWith("data:") ||
         image.startsWith("blob:")
     ) {
-
         return image;
-
     }
 
-    // Remove ./ from old saved paths
     image = image.replace(/^\.\/+/, "");
 
-    // Root-relative path
     return "/" + image.replace(/^\/+/, "");
-
 }
 
 // =====================================
@@ -131,7 +111,6 @@ function imageError(img) {
 
     img.src =
         "https://placehold.co/600x400?text=Image+Not+Available";
-
 }
 
 // =====================================
@@ -157,7 +136,6 @@ async function getProducts() {
 
             const products = request.result || [];
 
-            // Normalize old image paths
             const updatedProducts = products.map(product => ({
                 ...product,
                 image: getImagePath(product.image)
@@ -166,7 +144,6 @@ async function getProducts() {
             resolve(updatedProducts);
 
             db.close();
-
         };
 
         request.onerror = () => {
@@ -174,11 +151,8 @@ async function getProducts() {
             reject(request.error);
 
             db.close();
-
         };
-
     });
-
 }
 
 // =====================================
@@ -204,28 +178,20 @@ async function saveProduct(product) {
         transaction.objectStore(STORE_NAME).put(updatedProduct);
 
         transaction.oncomplete = () => {
-
             resolve(true);
             db.close();
-
         };
 
         transaction.onerror = () => {
-
             reject(transaction.error);
             db.close();
-
         };
 
         transaction.onabort = () => {
-
             reject(transaction.error);
             db.close();
-
         };
-
     });
-
 }
 
 // =====================================
@@ -246,25 +212,19 @@ async function deleteStoredProduct(id) {
         transaction.objectStore(STORE_NAME).delete(id);
 
         transaction.oncomplete = () => {
-
             resolve(true);
             db.close();
-
         };
 
         transaction.onerror = () => {
-
             reject(transaction.error);
             db.close();
-
         };
-
     });
-
 }
 
 // =====================================
-// 8. INITIALIZE PRODUCTS + MIGRATION
+// 8. INITIALIZE PRODUCTS
 // =====================================
 
 async function initializeProducts() {
@@ -284,9 +244,7 @@ async function initializeProducts() {
                 );
 
             } catch (error) {
-
                 oldProducts = [];
-
             }
 
             const initialProducts =
@@ -295,13 +253,10 @@ async function initializeProducts() {
                     : defaultProducts;
 
             for (const product of initialProducts) {
-
                 await saveProduct(product);
-
             }
 
             localStorage.removeItem(PRODUCT_KEY);
-
         }
 
         return await getProducts();
@@ -311,9 +266,7 @@ async function initializeProducts() {
         console.error("Product database error:", error);
 
         return defaultProducts;
-
     }
-
 }
 
 // =====================================
@@ -331,11 +284,8 @@ function getCart() {
         return Array.isArray(cart) ? cart : [];
 
     } catch (error) {
-
         return [];
-
     }
-
 }
 
 function saveCart(cart) {
@@ -346,7 +296,6 @@ function saveCart(cart) {
     );
 
     updateCartCount();
-
 }
 
 // =====================================
@@ -356,15 +305,12 @@ function saveCart(cart) {
 function escapeHTML(value) {
 
     return String(value ?? "").replace(/[&<>"']/g, char => ({
-
         "&": "&amp;",
         "<": "&lt;",
         ">": "&gt;",
         '"': "&quot;",
         "'": "&#039;"
-
     })[char]);
-
 }
 
 // =====================================
@@ -376,11 +322,8 @@ function toggleMenu() {
     const navbar = document.getElementById("navbar");
 
     if (navbar) {
-
         navbar.classList.toggle("show");
-
     }
-
 }
 
 // =====================================
@@ -390,20 +333,14 @@ function toggleMenu() {
 function updateCartCount() {
 
     const count = getCart().reduce(
-
         (sum, item) =>
             sum + (Number(item.quantity) || 0),
-
         0
-
     );
 
     document.querySelectorAll(".cart-count").forEach(element => {
-
         element.textContent = count;
-
     });
-
 }
 
 // =====================================
@@ -440,15 +377,8 @@ function showCartToast(productName) {
         `;
 
         toast.innerHTML = `
-
             <button id="freshToastClose"
-                style="
-                    float:right;
-                    border:0;
-                    background:none;
-                    font-size:23px;
-                    cursor:pointer;
-                ">
+                style="float:right;border:0;background:none;font-size:23px;cursor:pointer;">
                 ×
             </button>
 
@@ -460,69 +390,41 @@ function showCartToast(productName) {
                 style="color:#666;font-size:14px;line-height:1.5">
             </p>
 
-            <div style="
-                display:flex;
-                justify-content:space-between;
-                align-items:center;
-                gap:8px;
-                margin-top:15px;
-            ">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:15px;">
 
                 <span id="freshToastCount"
-                    style="
-                        font-size:12px;
-                        color:#398342;
-                        font-weight:bold;
-                    ">
+                    style="font-size:12px;color:#398342;font-weight:bold;">
                 </span>
 
                 <a href="/cart.html"
-                    style="
-                        background:#f28c28;
-                        color:white;
-                        padding:9px 14px;
-                        border-radius:25px;
-                        text-decoration:none;
-                        font-size:12px;
-                    ">
+                    style="background:#f28c28;color:white;padding:9px 14px;border-radius:25px;text-decoration:none;font-size:12px;">
                     View Cart →
                 </a>
-
             </div>
-
         `;
 
         document.body.appendChild(toast);
 
         document.getElementById("freshToastClose")
             .addEventListener("click", closeCartToast);
-
     }
 
     const message = document.getElementById("freshToastMessage");
-
     const count = document.getElementById("freshToastCount");
 
     if (message) {
-
         message.textContent =
             productName + " has been added to your cart.";
-
     }
 
     const total = getCart().reduce(
-
         (sum, item) =>
             sum + Number(item.quantity || 0),
-
         0
-
     );
 
     if (count) {
-
         count.textContent = `🛒 ${total} items in your cart`;
-
     }
 
     clearTimeout(cartToastTimer);
@@ -532,7 +434,6 @@ function showCartToast(productName) {
     toast.style.transform = "translateY(0)";
 
     cartToastTimer = setTimeout(closeCartToast, 3500);
-
 }
 
 // =====================================
@@ -550,7 +451,6 @@ function closeCartToast() {
     toast.style.transform = "translateY(-15px)";
 
     clearTimeout(cartToastTimer);
-
 }
 
 // =====================================
@@ -560,17 +460,12 @@ function closeCartToast() {
 function productCard(product) {
 
     const image = escapeHTML(getImagePath(product.image));
-
     const name = escapeHTML(product.name);
-
     const description = escapeHTML(product.description);
-
     const id = escapeHTML(product.id);
-
     const price = Number(product.price) || 0;
 
     return `
-
         <div class="product-card">
 
             <img
@@ -594,19 +489,13 @@ function productCard(product) {
                     <button
                         class="add-btn"
                         onclick="addToCart('${id}')">
-
                         Add to Cart +
-
                     </button>
 
                 </div>
-
             </div>
-
         </div>
-
     `;
-
 }
 
 // =====================================
@@ -632,7 +521,6 @@ async function displayProducts() {
             .slice(0, 3)
             .map(productCard)
             .join("");
-
     }
 
     if (all) {
@@ -642,13 +530,9 @@ async function displayProducts() {
             .join("");
 
         if (empty) {
-
             empty.hidden = products.length !== 0;
-
         }
-
     }
-
 }
 
 // =====================================
@@ -662,25 +546,18 @@ async function addToCart(id) {
         const products = await getProducts();
 
         const product = products.find(
-
             item => String(item.id) === String(id)
-
         );
 
         if (!product) {
-
             alert("Product not found!");
-
             return;
-
         }
 
         const cart = getCart();
 
         const existing = cart.find(
-
             item => String(item.id) === String(id)
-
         );
 
         if (existing) {
@@ -691,12 +568,9 @@ async function addToCart(id) {
         } else {
 
             cart.push({
-
                 id: product.id,
                 quantity: 1
-
             });
-
         }
 
         saveCart(cart);
@@ -708,9 +582,7 @@ async function addToCart(id) {
         console.error("Add to cart error:", error);
 
         alert("Unable to add product to cart.");
-
     }
-
 }
 
 // =====================================
@@ -732,13 +604,9 @@ async function displayCart() {
     let cart = getCart();
 
     cart = cart.filter(item =>
-
         products.some(product =>
-
             String(product.id) === String(item.id)
-
         )
-
     );
 
     saveCart(cart);
@@ -746,25 +614,17 @@ async function displayCart() {
     if (cart.length === 0) {
 
         container.innerHTML = `
-
             <div class="empty-cart">
-
                 <h2>🛒 Your Cart is Empty</h2>
-
                 <p>Add your favourite fresh juices!</p>
-
                 <a href="/products.html" class="btn">
                     Shop Now
                 </a>
-
             </div>
-
         `;
 
         summary.hidden = true;
-
         return;
-
     }
 
     summary.hidden = false;
@@ -774,9 +634,7 @@ async function displayCart() {
     container.innerHTML = cart.map(item => {
 
         const product = products.find(
-
             p => String(p.id) === String(item.id)
-
         );
 
         if (!product) return "";
@@ -784,10 +642,8 @@ async function displayCart() {
         const price = Number(product.price) || 0;
 
         const quantity = Math.max(
-
             1,
             Number(item.quantity) || 1
-
         );
 
         const subtotal = price * quantity;
@@ -797,7 +653,6 @@ async function displayCart() {
         const id = escapeHTML(item.id);
 
         return `
-
             <div class="cart-row">
 
                 <img
@@ -828,9 +683,7 @@ async function displayCart() {
                     <button
                         class="remove-btn"
                         onclick="removeFromCart('${id}')">
-
                         Remove
-
                     </button>
 
                 </div>
@@ -838,7 +691,6 @@ async function displayCart() {
                 <strong>₹${subtotal.toFixed(2)}</strong>
 
             </div>
-
         `;
 
     }).join("");
@@ -847,12 +699,9 @@ async function displayCart() {
         document.getElementById("cart-total");
 
     if (totalElement) {
-
         totalElement.textContent =
             "₹" + total.toFixed(2);
-
     }
-
 }
 
 // =====================================
@@ -864,9 +713,7 @@ function changeQuantity(id, change) {
     const cart = getCart();
 
     const item = cart.find(
-
         p => String(p.id) === String(id)
-
     );
 
     if (!item) return;
@@ -875,15 +722,12 @@ function changeQuantity(id, change) {
         (Number(item.quantity) || 0) + change;
 
     const updated = cart.filter(
-
         p => p.quantity > 0
-
     );
 
     saveCart(updated);
 
     displayCart();
-
 }
 
 // =====================================
@@ -893,15 +737,12 @@ function changeQuantity(id, change) {
 function removeFromCart(id) {
 
     const updated = getCart().filter(
-
         item => String(item.id) !== String(id)
-
     );
 
     saveCart(updated);
 
     displayCart();
-
 }
 
 // =====================================
@@ -915,11 +756,8 @@ async function orderWhatsApp() {
     const products = await getProducts();
 
     if (cart.length === 0) {
-
         alert("Your cart is empty!");
-
         return;
-
     }
 
     let total = 0;
@@ -930,9 +768,7 @@ async function orderWhatsApp() {
     cart.forEach(item => {
 
         const product = products.find(
-
             p => String(p.id) === String(item.id)
-
         );
 
         if (!product) return;
@@ -944,23 +780,17 @@ async function orderWhatsApp() {
 
         message +=
             `${product.name} x ${item.quantity} = ₹${subtotal.toFixed(2)}\n`;
-
     });
 
     message += `\nTotal Amount: ₹${total.toFixed(2)}`;
-
     message += "\n\nPlease confirm my order.";
 
     window.open(
-
         "https://wa.me/919724307705?text=" +
         encodeURIComponent(message),
-
         "_blank",
         "noopener"
-
     );
-
 }
 
 // =====================================
@@ -987,9 +817,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             "Website initialization error:",
             error
         );
-
     }
-
 });
 
 // =====================================
