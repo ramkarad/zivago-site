@@ -20,14 +20,14 @@ const defaultProducts = [
         id: 1,
         name: "Sea Buckthorn Juice - 500ml",
         price: 289,
-        description: "Enjoy the natural goodness of Nutrabud Sea Buckthorn Juice Concentrate. Packed with antioxidants, this vegan-friendly juice contains no added sugar and offers a naturally tangy flavour. Perfect for adding to your daily wellness routine, it comes in a convenient 500 ml bottle, specially designed for adults.",
+        description: "Enjoy the natural goodness of Sea Buckthorn Juice Concentrate. Packed with antioxidants, this vegan-friendly juice contains no added sugar and offers a naturally tangy flavour. Perfect for adding to your daily wellness routine, it comes in a convenient 500 ml bottle, specially designed for adults.",
         image: "/two.jpg"
     },
     {
         id: 2,
         name: "Sea Buckthorn Juice - 2*500ml",
         price: 529,
-        description: "Enjoy the natural goodness of Nutrabud Sea Buckthorn Juice Concentrate. Packed with antioxidants, this vegan-friendly juice contains no added sugar and offers a naturally tangy flavour. Perfect for your daily wellness routine, this pack includes 2 convenient bottles of 500 ml each (Total 1 Litre), specially designed for adults.",
+        description: "Enjoy the natural goodness of Sea Buckthorn Juice Concentrate. Packed with antioxidants, this vegan-friendly juice contains no added sugar and offers a naturally tangy flavour. Perfect for your daily wellness routine, this pack includes 2 convenient bottles of 500 ml each (Total 1 Litre), specially designed for adults.",
         image: "/ai.jpg"
     }
  ];
