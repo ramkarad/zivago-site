@@ -1561,3 +1561,34 @@ textarea {
     padding: 3px 6px;
     border-radius: 4px;
 }
+.cod-message {
+    background: linear-gradient(135deg, #fff4e8, #fffaf3);
+    color: #e87516;
+    padding: 14px 18px;
+    margin: 15px 0;
+    border: 1px solid #f5c28e;
+    border-left: 5px solid #f28c28;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    text-align: center;
+    line-height: 1.6;
+    box-shadow: 0 3px 10px rgba(242, 140, 40, 0.10);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.cod-message:hover {
+    background: #fff0df;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(242, 140, 40, 0.18);
+}
+
+/* Mobile Responsive */
+@media (max-width: 600px) {
+    .cod-message {
+        font-size: 13px;
+        padding: 12px;
+        margin: 12px 0;
+    }
+}
