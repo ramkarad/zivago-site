@@ -1,3 +1,4 @@
+
 const DB_NAME = "zivago_database";
 const DB_VERSION = 1;
 const STORE_NAME = "products";
@@ -12,28 +13,21 @@ let uploadedImage = "";
 // =====================================
 
 function openAdminDB() {
-
     return new Promise((resolve, reject) => {
-
         const request = indexedDB.open(DB_NAME, DB_VERSION);
 
         request.onupgradeneeded = function(event) {
-
             const db = event.target.result;
 
             if (!db.objectStoreNames.contains(STORE_NAME)) {
-
                 db.createObjectStore(STORE_NAME, {
                     keyPath: "id"
                 });
-
             }
         };
 
         request.onsuccess = () => resolve(request.result);
-
         request.onerror = () => reject(request.error);
-
     });
 }
 
@@ -42,19 +36,21 @@ function openAdminDB() {
 // =====================================
 
 async function getAdminProducts() {
-
     const db = await openAdminDB();
 
     return new Promise((resolve, reject) => {
-
         const transaction = db.transaction(STORE_NAME, "readonly");
-
         const request = transaction.objectStore(STORE_NAME).getAll();
 
-        request.onsuccess = () => resolve(request.result || []);
+        request.onsuccess = () => {
+            resolve(request.result || []);
+            db.close();
+        };
 
-        request.onerror = () => reject(request.error);
-
+        request.onerror = () => {
+            reject(request.error);
+            db.close();
+        };
     });
 }
 
@@ -63,19 +59,27 @@ async function getAdminProducts() {
 // =====================================
 
 async function saveAdminProduct(product) {
-
     const db = await openAdminDB();
 
     return new Promise((resolve, reject) => {
-
         const transaction = db.transaction(STORE_NAME, "readwrite");
 
         transaction.objectStore(STORE_NAME).put(product);
 
-        transaction.oncomplete = () => resolve(true);
+        transaction.oncomplete = () => {
+            db.close();
+            resolve(true);
+        };
 
-        transaction.onerror = () => reject(transaction.error);
+        transaction.onerror = () => {
+            db.close();
+            reject(transaction.error);
+        };
 
+        transaction.onabort = () => {
+            db.close();
+            reject(transaction.error);
+        };
     });
 }
 
@@ -84,19 +88,22 @@ async function saveAdminProduct(product) {
 // =====================================
 
 async function removeAdminProduct(id) {
-
     const db = await openAdminDB();
 
     return new Promise((resolve, reject) => {
-
         const transaction = db.transaction(STORE_NAME, "readwrite");
 
-        transaction.objectStore(STORE_NAME).delete(id);
+        transaction.objectStore(STORE_NAME).delete(Number(id));
 
-        transaction.oncomplete = () => resolve(true);
+        transaction.oncomplete = () => {
+            db.close();
+            resolve(true);
+        };
 
-        transaction.onerror = () => reject(transaction.error);
-
+        transaction.onerror = () => {
+            db.close();
+            reject(transaction.error);
+        };
     });
 }
 
@@ -105,7 +112,6 @@ async function removeAdminProduct(id) {
 // =====================================
 
 function escapeAdminHTML(value) {
-
     return String(value ?? "").replace(/[&<>"']/g, char => ({
         "&": "&amp;",
         "<": "&lt;",
@@ -122,30 +128,23 @@ function escapeAdminHTML(value) {
 document.addEventListener("DOMContentLoaded", async () => {
 
     const loginBox = document.getElementById("login-box");
-
     const dashboard = document.getElementById("dashboard");
-
     const loginForm = document.getElementById("login-form");
-
     const productForm = document.getElementById("product-form");
-
     const imageInput = document.getElementById("product-image");
 
     if (!loginBox || !dashboard || !loginForm || !productForm || !imageInput) {
-
         console.error("Admin HTML elements are missing.");
-
         return;
     }
 
-    // Check login
+    // =====================================
+    // CHECK LOGIN
+    // =====================================
 
     if (sessionStorage.getItem("freshsip_admin") === "true") {
-
         loginBox.hidden = true;
-
         dashboard.hidden = false;
-
         await loadAdminProducts();
     }
 
@@ -154,48 +153,30 @@ document.addEventListener("DOMContentLoaded", async () => {
     // =====================================
 
     loginForm.addEventListener("submit", async function(e) {
-
         e.preventDefault();
 
-        const username =
-            document.getElementById("username").value.trim();
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value;
+        const error = document.getElementById("login-error");
 
-        const password =
-            document.getElementById("password").value;
-
-        const error =
-            document.getElementById("login-error");
-
-        if (
-            username === ADMIN_USERNAME &&
-            password === ADMIN_PASSWORD
-        ) {
+        if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
 
             sessionStorage.setItem("freshsip_admin", "true");
 
             loginBox.hidden = true;
-
             dashboard.hidden = false;
-
             error.textContent = "";
 
             try {
-
                 await loadAdminProducts();
-
             } catch (err) {
-
                 error.textContent = "Database connection failed.";
-
                 console.error(err);
             }
 
         } else {
-
             error.textContent = "Invalid username or password!";
-
         }
-
     });
 
     // =====================================
@@ -205,56 +186,38 @@ document.addEventListener("DOMContentLoaded", async () => {
     imageInput.addEventListener("change", function() {
 
         const file = this.files[0];
-
-        const preview =
-            document.getElementById("image-preview");
+        const preview = document.getElementById("image-preview");
 
         uploadedImage = "";
-
         preview.hidden = true;
 
         if (!file) return;
 
         if (!file.type.startsWith("image/")) {
-
             alert("Please select a valid image.");
-
             this.value = "";
-
             return;
         }
 
-        // Limit to 5 MB
-
         if (file.size > 5 * 1024 * 1024) {
-
             alert("Image size must be less than 5 MB.");
-
             this.value = "";
-
             return;
         }
 
         const reader = new FileReader();
 
         reader.onload = function(event) {
-
             uploadedImage = event.target.result;
-
             preview.src = uploadedImage;
-
             preview.hidden = false;
-
         };
 
         reader.onerror = function() {
-
             alert("Unable to read image.");
-
         };
 
         reader.readAsDataURL(file);
-
     });
 
     // =====================================
@@ -265,65 +228,55 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         e.preventDefault();
 
-        const message =
-            document.getElementById("save-message");
+        const message = document.getElementById("save-message");
 
         if (sessionStorage.getItem("freshsip_admin") !== "true") {
-
             message.textContent = "Please login first.";
-
             return;
         }
 
-        const name =
-            document.getElementById("product-name").value.trim();
+        const name = document.getElementById("product-name").value.trim();
 
-        const price =
-            Number(document.getElementById("product-price").value);
+        const price = Number(
+            document.getElementById("product-price").value
+        );
 
-        const description =
-            document.getElementById("product-description").value.trim();
+        const description = document.getElementById("product-description").value.trim();
 
-        if (!name || !description || !uploadedImage || !Number.isFinite(price) || price <= 0) {
+        if (!name || !description || !uploadedImage ||
+            !Number.isFinite(price) || price <= 0) {
 
             message.textContent = "Please complete all product details.";
-
             return;
         }
 
         const newProduct = {
-
             id: Date.now(),
-
             name: name,
-
             price: price,
-
             description: description,
-
             image: uploadedImage
-
         };
 
         try {
 
             message.textContent = "Saving product...";
 
+            // Save to the SAME database used by script.js
             await saveAdminProduct(newProduct);
 
+            // Clear form
             this.reset();
 
             uploadedImage = "";
 
-            const preview =
-                document.getElementById("image-preview");
-
+            const preview = document.getElementById("image-preview");
             preview.src = "";
-
             preview.hidden = true;
 
             message.textContent = "✓ Product added successfully!";
 
+            // Refresh admin product list
             await loadAdminProducts();
 
         } catch (error) {
@@ -332,9 +285,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             message.textContent =
                 "Unable to save product. Please check browser storage.";
-
         }
-
     });
 
 });
@@ -345,11 +296,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 async function loadAdminProducts() {
 
-    const container =
-        document.getElementById("admin-products");
-
-    const count =
-        document.getElementById("admin-product-count");
+    const container = document.getElementById("admin-products");
+    const count = document.getElementById("admin-product-count");
 
     if (!container || !count) return;
 
@@ -360,16 +308,13 @@ async function loadAdminProducts() {
         count.textContent = products.length;
 
         if (products.length === 0) {
-
             container.innerHTML = "<p>No products added yet.</p>";
-
             return;
         }
 
         container.innerHTML = products.map(product => {
 
             return `
-
                 <div class="admin-product">
 
                     <img
@@ -390,14 +335,13 @@ async function loadAdminProducts() {
 
                     <button
                         class="delete-btn"
-                        onclick="deleteProduct('${escapeAdminHTML(product.id)}')">
+                        onclick="deleteProduct(${Number(product.id)})">
 
                         Delete
 
                     </button>
 
                 </div>
-
             `;
 
         }).join("");
@@ -405,9 +349,7 @@ async function loadAdminProducts() {
     } catch (error) {
 
         console.error(error);
-
         container.innerHTML = "<p>Unable to load products.</p>";
-
     }
 }
 
@@ -418,9 +360,7 @@ async function loadAdminProducts() {
 async function deleteProduct(id) {
 
     if (sessionStorage.getItem("freshsip_admin") !== "true") {
-
         alert("Please login first.");
-
         return;
     }
 
@@ -432,7 +372,7 @@ async function deleteProduct(id) {
 
     try {
 
-        await removeAdminProduct(Number(id));
+        await removeAdminProduct(id);
 
         await loadAdminProducts();
 
@@ -441,9 +381,7 @@ async function deleteProduct(id) {
     } catch (error) {
 
         console.error(error);
-
         alert("Unable to delete product.");
-
     }
 }
 
@@ -454,7 +392,5 @@ async function deleteProduct(id) {
 function adminLogout() {
 
     sessionStorage.removeItem("freshsip_admin");
-
     window.location.reload();
-
 }
