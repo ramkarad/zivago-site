@@ -32,16 +32,7 @@ const defaultProducts = [
         price: 529,
         description: "Enjoy the natural goodness of Sea Buckthorn Juice Concentrate. Packed with antioxidants, this vegan-friendly juice contains no added sugar and offers a naturally tangy flavour. Perfect for your daily wellness routine, this pack includes 2 convenient bottles of 500 ml each (Total 1 Litre), specially designed for adults.",
         image: "/ai.jpg"
-    },
-
-    {
-        id: 3,
-        name: "Sea Buckthorn Juice - 2*500ml",
-        price: 529,
-        description: "Enjoy the natural goodness of Sea Buckthorn Juice Concentrate. Packed with antioxidants, this vegan-friendly juice contains no added sugar and offers a naturally tangy flavour. Perfect for your daily wellness routine, this pack includes 2 convenient bottles of 500 ml each (Total 1 Litre), specially designed for adults.",
-        image: "/ai.jpg"
     }
-
 ];
 
 
