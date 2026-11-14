@@ -1,21 +1,23 @@
 
-// =====================================
+// =============================================
 // ZIVAGO WEBSITE - COMPLETE SCRIPT.JS
-// PRODUCT + INDEXEDDB + CART + WHATSAPP
-// =====================================
+// PRODUCTS + INDEXEDDB + CART + WHATSAPP
+// =============================================
 
-const PRODUCT_KEY = "freshsip_products";
 const CART_KEY = "freshsip_cart";
 
 const DB_NAME = "zivago_database";
 const DB_VERSION = 1;
 const STORE_NAME = "products";
 
-// =====================================
-// 1. DEFAULT PRODUCTS
-// =====================================
+
+// =============================================
+// 1. MANAGE PRODUCTS HERE
+// Add, edit or remove products in this array.
+// =============================================
 
 const defaultProducts = [
+
     {
         id: 1,
         name: "Sea Buckthorn Juice - 500ml",
@@ -23,6 +25,7 @@ const defaultProducts = [
         description: "Enjoy the natural goodness of Sea Buckthorn Juice Concentrate. Packed with antioxidants, this vegan-friendly juice contains no added sugar and offers a naturally tangy flavour. Perfect for adding to your daily wellness routine, it comes in a convenient 500 ml bottle, specially designed for adults.",
         image: "/two.jpg"
     },
+
     {
         id: 2,
         name: "Sea Buckthorn Juice - 2*500ml",
@@ -30,21 +33,37 @@ const defaultProducts = [
         description: "Enjoy the natural goodness of Sea Buckthorn Juice Concentrate. Packed with antioxidants, this vegan-friendly juice contains no added sugar and offers a naturally tangy flavour. Perfect for your daily wellness routine, this pack includes 2 convenient bottles of 500 ml each (Total 1 Litre), specially designed for adults.",
         image: "/ai.jpg"
     },
+
     {
-         id: 3,
+        id: 3,
         name: "Sea Buckthorn Juice - 2*500ml",
         price: 529,
         description: "Enjoy the natural goodness of Sea Buckthorn Juice Concentrate. Packed with antioxidants, this vegan-friendly juice contains no added sugar and offers a naturally tangy flavour. Perfect for your daily wellness routine, this pack includes 2 convenient bottles of 500 ml each (Total 1 Litre), specially designed for adults.",
         image: "/ai.jpg"
-        
     }
- ];
 
-// =====================================
-// 2. INDEXEDDB CONNECTION
-// =====================================
+];
+
+
+// =============================================
+// 2. ADD NEW PRODUCT EXAMPLE
+// =============================================
+
+// {
+//     id: 4,
+//     name: "New Juice Product",
+//     price: 399,
+//     description: "Your product description here.",
+//     image: "/new-product.jpg"
+// }
+
+
+// =============================================
+// 3. INDEXEDDB CONNECTION
+// =============================================
 
 function openProductDB() {
+
     return new Promise((resolve, reject) => {
 
         if (!window.indexedDB) {
@@ -55,13 +74,17 @@ function openProductDB() {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
 
         request.onupgradeneeded = function(event) {
+
             const db = event.target.result;
 
             if (!db.objectStoreNames.contains(STORE_NAME)) {
+
                 db.createObjectStore(STORE_NAME, {
                     keyPath: "id"
                 });
+
             }
+
         };
 
         request.onsuccess = function() {
@@ -71,12 +94,15 @@ function openProductDB() {
         request.onerror = function() {
             reject(request.error);
         };
+
     });
+
 }
 
-// =====================================
-// 3. IMAGE PATH - VERCEL FIX
-// =====================================
+
+// =============================================
+// 4. IMAGE PATH
+// =============================================
 
 function getImagePath(image) {
 
@@ -98,11 +124,13 @@ function getImagePath(image) {
     image = image.replace(/^\.\/+/, "");
 
     return "/" + image.replace(/^\/+/, "");
+
 }
 
-// =====================================
-// 4. IMAGE ERROR HANDLING
-// =====================================
+
+// =============================================
+// 5. IMAGE ERROR HANDLING
+// =============================================
 
 function imageError(img) {
 
@@ -110,13 +138,78 @@ function imageError(img) {
 
     img.onerror = null;
 
-    img.src =
-        "https://placehold.co/600x400?text=Image+Not+Available";
+    img.src = "https://placehold.co/600x400?text=Image+Not+Available";
+
 }
 
-// =====================================
-// 5. GET ALL PRODUCTS
-// =====================================
+
+// =============================================
+// 6. SYNCHRONIZE PRODUCTS WITH INDEXEDDB
+// IMPORTANT:
+// defaultProducts is the source of truth.
+// Every page load updates IndexedDB to match it.
+// =============================================
+
+async function initializeProducts() {
+
+    const db = await openProductDB();
+
+    return new Promise((resolve, reject) => {
+
+        const transaction = db.transaction(
+            STORE_NAME,
+            "readwrite"
+        );
+
+        const store = transaction.objectStore(STORE_NAME);
+
+        // Remove old product records.
+        store.clear();
+
+        // Insert current products from script.js.
+        defaultProducts.forEach(product => {
+
+            store.put({
+                ...product,
+                image: getImagePath(product.image)
+            });
+
+        });
+
+        transaction.oncomplete = function() {
+
+            db.close();
+
+            console.log("ZivaGO products synchronized successfully.");
+
+            resolve(true);
+
+        };
+
+        transaction.onerror = function() {
+
+            db.close();
+
+            reject(transaction.error);
+
+        };
+
+        transaction.onabort = function() {
+
+            db.close();
+
+            reject(transaction.error);
+
+        };
+
+    });
+
+}
+
+
+// =============================================
+// 7. GET ALL PRODUCTS
+// =============================================
 
 async function getProducts() {
 
@@ -133,7 +226,7 @@ async function getProducts() {
 
         const request = store.getAll();
 
-        request.onsuccess = () => {
+        request.onsuccess = function() {
 
             const products = request.result || [];
 
@@ -142,137 +235,62 @@ async function getProducts() {
                 image: getImagePath(product.image)
             }));
 
+            db.close();
+
             resolve(updatedProducts);
 
-            db.close();
         };
 
-        request.onerror = () => {
+        request.onerror = function() {
+
+            db.close();
 
             reject(request.error);
 
-            db.close();
         };
+
     });
+
 }
 
-// =====================================
-// 6. SAVE PRODUCT
-// =====================================
 
-async function saveProduct(product) {
+// =============================================
+// 8. ESCAPE HTML
+// =============================================
 
-    const db = await openProductDB();
+function escapeHTML(value) {
 
-    return new Promise((resolve, reject) => {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
 
-        const transaction = db.transaction(
-            STORE_NAME,
-            "readwrite"
-        );
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
 
-        const updatedProduct = {
-            ...product,
-            image: getImagePath(product.image)
-        };
+    })[char]);
 
-        transaction.objectStore(STORE_NAME).put(updatedProduct);
-
-        transaction.oncomplete = () => {
-            resolve(true);
-            db.close();
-        };
-
-        transaction.onerror = () => {
-            reject(transaction.error);
-            db.close();
-        };
-
-        transaction.onabort = () => {
-            reject(transaction.error);
-            db.close();
-        };
-    });
 }
 
-// =====================================
-// 7. DELETE PRODUCT
-// =====================================
 
-async function deleteStoredProduct(id) {
+// =============================================
+// 9. MOBILE MENU
+// =============================================
 
-    const db = await openProductDB();
+function toggleMenu() {
 
-    return new Promise((resolve, reject) => {
+    const navbar = document.getElementById("navbar");
 
-        const transaction = db.transaction(
-            STORE_NAME,
-            "readwrite"
-        );
-
-        transaction.objectStore(STORE_NAME).delete(id);
-
-        transaction.oncomplete = () => {
-            resolve(true);
-            db.close();
-        };
-
-        transaction.onerror = () => {
-            reject(transaction.error);
-            db.close();
-        };
-    });
-}
-
-// =====================================
-// 8. INITIALIZE PRODUCTS
-// =====================================
-
-async function initializeProducts() {
-
-    try {
-
-        let products = await getProducts();
-
-        if (products.length === 0) {
-
-            let oldProducts = [];
-
-            try {
-
-                oldProducts = JSON.parse(
-                    localStorage.getItem(PRODUCT_KEY) || "[]"
-                );
-
-            } catch (error) {
-                oldProducts = [];
-            }
-
-            const initialProducts =
-                Array.isArray(oldProducts) && oldProducts.length
-                    ? oldProducts
-                    : defaultProducts;
-
-            for (const product of initialProducts) {
-                await saveProduct(product);
-            }
-
-            localStorage.removeItem(PRODUCT_KEY);
-        }
-
-        return await getProducts();
-
-    } catch (error) {
-
-        console.error("Product database error:", error);
-
-        return defaultProducts;
+    if (navbar) {
+        navbar.classList.toggle("show");
     }
+
 }
 
-// =====================================
-// 9. CART FUNCTIONS
-// =====================================
+
+// =============================================
+// 10. CART FUNCTIONS
+// =============================================
 
 function getCart() {
 
@@ -285,9 +303,13 @@ function getCart() {
         return Array.isArray(cart) ? cart : [];
 
     } catch (error) {
+
         return [];
+
     }
+
 }
+
 
 function saveCart(cart) {
 
@@ -297,39 +319,13 @@ function saveCart(cart) {
     );
 
     updateCartCount();
+
 }
 
-// =====================================
-// 10. ESCAPE HTML
-// =====================================
 
-function escapeHTML(value) {
-
-    return String(value ?? "").replace(/[&<>"']/g, char => ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#039;"
-    })[char]);
-}
-
-// =====================================
-// 11. MOBILE MENU
-// =====================================
-
-function toggleMenu() {
-
-    const navbar = document.getElementById("navbar");
-
-    if (navbar) {
-        navbar.classList.toggle("show");
-    }
-}
-
-// =====================================
-// 12. UPDATE CART COUNT
-// =====================================
+// =============================================
+// 11. UPDATE CART COUNT
+// =============================================
 
 function updateCartCount() {
 
@@ -340,82 +336,78 @@ function updateCartCount() {
     );
 
     document.querySelectorAll(".cart-count").forEach(element => {
+
         element.textContent = count;
+
     });
+
 }
 
-// =====================================
-// 13. CART SUCCESS MESSAGE
-// =====================================
+
+// =============================================
+// 12. CART SUCCESS POPUP
+// Works with existing index.html popup.
+// =============================================
 
 let cartToastTimer;
+
 
 function showCartToast(productName) {
 
     let toast = document.getElementById("cart-toast");
 
+    // Create popup if it does not exist.
     if (!toast) {
 
         toast = document.createElement("div");
 
         toast.id = "cart-toast";
-
-        toast.style.cssText = `
-            position:fixed;
-            top:20px;
-            right:20px;
-            width:min(360px,calc(100% - 30px));
-            background:#fff;
-            padding:20px;
-            border-radius:15px;
-            box-shadow:0 10px 35px rgba(0,0,0,.18);
-            border-top:5px solid #398342;
-            z-index:999999;
-            opacity:0;
-            visibility:hidden;
-            transform:translateY(-15px);
-            transition:.3s ease;
-        `;
+        toast.className = "cart-toast";
 
         toast.innerHTML = `
-            <button id="freshToastClose"
-                style="float:right;border:0;background:none;font-size:23px;cursor:pointer;">
+
+            <div class="toast-icon">✓</div>
+
+            <div class="toast-content">
+
+                <strong>Added to Cart Successfully!</strong>
+
+                <p id="toast-message"></p>
+
+                <div class="toast-bottom">
+
+                    <span class="toast-cart-count" id="toast-count"></span>
+
+                    <a href="./cart.html" class="toast-cart-link">
+                        View Cart →
+                    </a>
+
+                </div>
+
+            </div>
+
+            <button class="toast-close"
+                onclick="closeCartToast()">
                 ×
             </button>
 
-            <strong style="color:#398342;font-size:16px">
-                ✓ Added to Cart Successfully!
-            </strong>
+            <div class="toast-progress"></div>
 
-            <p id="freshToastMessage"
-                style="color:#666;font-size:14px;line-height:1.5">
-            </p>
-
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:15px;">
-
-                <span id="freshToastCount"
-                    style="font-size:12px;color:#398342;font-weight:bold;">
-                </span>
-
-                <a href="/cart.html"
-                    style="background:#f28c28;color:white;padding:9px 14px;border-radius:25px;text-decoration:none;font-size:12px;">
-                    View Cart →
-                </a>
-            </div>
         `;
 
         document.body.appendChild(toast);
 
-        document.getElementById("freshToastClose")
-            .addEventListener("click", closeCartToast);
     }
 
-    const message = document.getElementById("freshToastMessage");
-    const count = document.getElementById("freshToastCount");
+    const message = document.getElementById("toast-message");
+
+    const countElement = document.getElementById("toast-count");
 
     if (message) {
+
         message.textContent =
-            productName + " has been added to your cart.";
+            productName + " has been added to your shopping cart.";
+
     }
 
     const total = getCart().reduce(
@@ -424,49 +416,64 @@ function showCartToast(productName) {
         0
     );
 
-    if (count) {
-        count.textContent = `🛒 ${total} items in your cart`;
+    if (countElement) {
+
+        countElement.textContent =
+            "🛒 " + total + " items in your cart";
+
     }
 
     clearTimeout(cartToastTimer);
 
-    toast.style.opacity = "1";
-    toast.style.visibility = "visible";
-    toast.style.transform = "translateY(0)";
+    toast.classList.remove("show");
+
+    // Restart animation.
+    void toast.offsetWidth;
+
+    toast.classList.add("show");
 
     cartToastTimer = setTimeout(closeCartToast, 3500);
+
 }
 
-// =====================================
-// 14. CLOSE CART MESSAGE
-// =====================================
+
+// =============================================
+// 13. CLOSE CART POPUP
+// =============================================
 
 function closeCartToast() {
 
     const toast = document.getElementById("cart-toast");
 
-    if (!toast) return;
+    if (toast) {
 
-    toast.style.opacity = "0";
-    toast.style.visibility = "hidden";
-    toast.style.transform = "translateY(-15px)";
+        toast.classList.remove("show");
+
+    }
 
     clearTimeout(cartToastTimer);
+
 }
 
-// =====================================
-// 15. PRODUCT CARD
-// =====================================
+
+// =============================================
+// 14. PRODUCT CARD
+// =============================================
 
 function productCard(product) {
 
     const image = escapeHTML(getImagePath(product.image));
+
     const name = escapeHTML(product.name);
+
     const description = escapeHTML(product.description);
+
     const id = escapeHTML(product.id);
+
     const price = Number(product.price) || 0;
 
     return `
+
         <div class="product-card">
 
             <img
@@ -490,55 +497,86 @@ function productCard(product) {
                     <button
                         class="add-btn"
                         onclick="addToCart('${id}')">
+
                         Add to Cart +
+
                     </button>
 
                 </div>
+
             </div>
+
         </div>
+
     `;
+
 }
 
-// =====================================
-// 16. DISPLAY PRODUCTS
-// =====================================
+
+// =============================================
+// 15. DISPLAY PRODUCTS
+// Homepage: First 3 products.
+// Products page: All products.
+// =============================================
 
 async function displayProducts() {
 
-    const products = await getProducts();
+    try {
 
-    const featured =
-        document.getElementById("featured-products");
+        const products = await getProducts();
 
-    const all =
-        document.getElementById("all-products");
+        const featured =
+            document.getElementById("featured-products");
 
-    const empty =
-        document.getElementById("empty-products");
+        const all =
+            document.getElementById("all-products");
 
-    if (featured) {
+        const empty =
+            document.getElementById("empty-products");
 
-        featured.innerHTML = products
-            .slice(0, 3)
-            .map(productCard)
-            .join("");
-    }
 
-    if (all) {
+        // HOMEPAGE
 
-        all.innerHTML = products
-            .map(productCard)
-            .join("");
+        if (featured) {
 
-        if (empty) {
-            empty.hidden = products.length !== 0;
+            featured.innerHTML = products
+                .slice(0, 3)
+                .map(productCard)
+                .join("");
+
         }
+
+
+        // PRODUCTS PAGE
+
+        if (all) {
+
+            all.innerHTML = products
+                .map(productCard)
+                .join("");
+
+            if (empty) {
+
+                empty.hidden = products.length !== 0;
+
+            }
+
+        }
+
+        console.log("Products displayed:", products.length);
+
+    } catch (error) {
+
+        console.error("Display products error:", error);
+
     }
+
 }
 
-// =====================================
-// 17. ADD TO CART
-// =====================================
+
+// =============================================
+// 16. ADD TO CART
+// =============================================
 
 async function addToCart(id) {
 
@@ -551,8 +589,11 @@ async function addToCart(id) {
         );
 
         if (!product) {
+
             alert("Product not found!");
+
             return;
+
         }
 
         const cart = getCart();
@@ -569,9 +610,12 @@ async function addToCart(id) {
         } else {
 
             cart.push({
+
                 id: product.id,
                 quantity: 1
+
             });
+
         }
 
         saveCart(cart);
@@ -583,12 +627,15 @@ async function addToCart(id) {
         console.error("Add to cart error:", error);
 
         alert("Unable to add product to cart.");
+
     }
+
 }
 
-// =====================================
-// 18. DISPLAY CART
-// =====================================
+
+// =============================================
+// 17. DISPLAY CART
+// =============================================
 
 async function displayCart() {
 
@@ -600,114 +647,138 @@ async function displayCart() {
 
     if (!container || !summary) return;
 
-    const products = await getProducts();
+    try {
 
-    let cart = getCart();
+        const products = await getProducts();
 
-    cart = cart.filter(item =>
-        products.some(product =>
-            String(product.id) === String(item.id)
-        )
-    );
+        let cart = getCart();
 
-    saveCart(cart);
-
-    if (cart.length === 0) {
-
-        container.innerHTML = `
-            <div class="empty-cart">
-                <h2>🛒 Your Cart is Empty</h2>
-                <p>Add your favourite fresh juices!</p>
-                <a href="/products.html" class="btn">
-                    Shop Now
-                </a>
-            </div>
-        `;
-
-        summary.hidden = true;
-        return;
-    }
-
-    summary.hidden = false;
-
-    let total = 0;
-
-    container.innerHTML = cart.map(item => {
-
-        const product = products.find(
-            p => String(p.id) === String(item.id)
+        cart = cart.filter(item =>
+            products.some(product =>
+                String(product.id) === String(item.id)
+            )
         );
 
-        if (!product) return "";
+        saveCart(cart);
 
-        const price = Number(product.price) || 0;
+        if (cart.length === 0) {
 
-        const quantity = Math.max(
-            1,
-            Number(item.quantity) || 1
-        );
+            container.innerHTML = `
 
-        const subtotal = price * quantity;
+                <div class="empty-cart">
 
-        total += subtotal;
+                    <h2>🛒 Your Cart is Empty</h2>
 
-        const id = escapeHTML(item.id);
+                    <p>Add your favourite fresh juices!</p>
 
-        return `
-            <div class="cart-row">
+                    <a href="./products.html" class="btn">
+                        Shop Now
+                    </a>
 
-                <img
-                    src="${escapeHTML(getImagePath(product.image))}"
-                    alt="${escapeHTML(product.name)}"
-                    onerror="imageError(this)">
+                </div>
 
-                <div class="cart-details">
+            `;
 
-                    <h3>${escapeHTML(product.name)}</h3>
+            summary.hidden = true;
 
-                    <p>₹${price.toFixed(2)}</p>
+            return;
 
-                    <div class="quantity-control">
+        }
 
-                        <button onclick="changeQuantity('${id}',-1)">
-                            −
-                        </button>
+        summary.hidden = false;
 
-                        <span>${quantity}</span>
+        let total = 0;
 
-                        <button onclick="changeQuantity('${id}',1)">
-                            +
+        container.innerHTML = cart.map(item => {
+
+            const product = products.find(
+                p => String(p.id) === String(item.id)
+            );
+
+            if (!product) return "";
+
+            const price = Number(product.price) || 0;
+
+            const quantity = Math.max(
+                1,
+                Number(item.quantity) || 1
+            );
+
+            const subtotal = price * quantity;
+
+            total += subtotal;
+
+            const id = escapeHTML(item.id);
+
+            return `
+
+                <div class="cart-row">
+
+                    <img
+                        src="${escapeHTML(getImagePath(product.image))}"
+                        alt="${escapeHTML(product.name)}"
+                        onerror="imageError(this)">
+
+                    <div class="cart-details">
+
+                        <h3>${escapeHTML(product.name)}</h3>
+
+                        <p>₹${price.toFixed(2)}</p>
+
+                        <div class="quantity-control">
+
+                            <button onclick="changeQuantity('${id}',-1)">
+                                −
+                            </button>
+
+                            <span>${quantity}</span>
+
+                            <button onclick="changeQuantity('${id}',1)">
+                                +
+                            </button>
+
+                        </div>
+
+                        <button
+                            class="remove-btn"
+                            onclick="removeFromCart('${id}')">
+
+                            Remove
+
                         </button>
 
                     </div>
 
-                    <button
-                        class="remove-btn"
-                        onclick="removeFromCart('${id}')">
-                        Remove
-                    </button>
+                    <strong>₹${subtotal.toFixed(2)}</strong>
 
                 </div>
 
-                <strong>₹${subtotal.toFixed(2)}</strong>
+            `;
 
-            </div>
-        `;
+        }).join("");
 
-    }).join("");
+        const totalElement =
+            document.getElementById("cart-total");
 
-    const totalElement =
-        document.getElementById("cart-total");
+        if (totalElement) {
 
-    if (totalElement) {
-        totalElement.textContent =
-            "₹" + total.toFixed(2);
+            totalElement.textContent =
+                "₹" + total.toFixed(2);
+
+        }
+
+    } catch (error) {
+
+        console.error("Display cart error:", error);
+
     }
+
 }
 
-// =====================================
-// 19. CHANGE QUANTITY
-// =====================================
+
+// =============================================
+// 18. CHANGE QUANTITY
+// =============================================
 
 function changeQuantity(id, change) {
 
@@ -729,11 +800,13 @@ function changeQuantity(id, change) {
     saveCart(updated);
 
     displayCart();
+
 }
 
-// =====================================
-// 20. REMOVE FROM CART
-// =====================================
+
+// =============================================
+// 19. REMOVE FROM CART
+// =============================================
 
 function removeFromCart(id) {
 
@@ -744,73 +817,101 @@ function removeFromCart(id) {
     saveCart(updated);
 
     displayCart();
+
 }
 
-// =====================================
-// 21. WHATSAPP ORDER
-// =====================================
+
+// =============================================
+// 20. WHATSAPP ORDER
+// =============================================
 
 async function orderWhatsApp() {
 
-    const cart = getCart();
+    try {
 
-    const products = await getProducts();
+        const cart = getCart();
 
-    if (cart.length === 0) {
-        alert("Your cart is empty!");
-        return;
-    }
+        const products = await getProducts();
 
-    let total = 0;
+        if (cart.length === 0) {
 
-    let message =
-        "Hello ZivaGo! I want to place an order:\n\n";
+            alert("Your cart is empty!");
 
-    cart.forEach(item => {
+            return;
 
-        const product = products.find(
-            p => String(p.id) === String(item.id)
+        }
+
+        let total = 0;
+
+        let message =
+            "Hello ZivaGo! I want to place an order:\n\n";
+
+        cart.forEach(item => {
+
+            const product = products.find(
+                p => String(p.id) === String(item.id)
+            );
+
+            if (!product) return;
+
+            const quantity = Number(item.quantity) || 1;
+
+            const subtotal =
+                Number(product.price) * quantity;
+
+            total += subtotal;
+
+            message +=
+                `${product.name} x ${quantity} = ₹${subtotal.toFixed(2)}\n`;
+
+        });
+
+        message += `\nTotal Amount: ₹${total.toFixed(2)}`;
+
+        message += "\n\nPlease confirm my order.";
+
+        window.open(
+            "https://wa.me/919724307705?text=" +
+            encodeURIComponent(message),
+            "_blank",
+            "noopener"
         );
 
-        if (!product) return;
+    } catch (error) {
 
-        const subtotal =
-            Number(product.price) * Number(item.quantity);
+        console.error("WhatsApp order error:", error);
 
-        total += subtotal;
+        alert("Unable to process your order.");
 
-        message +=
-            `${product.name} x ${item.quantity} = ₹${subtotal.toFixed(2)}\n`;
-    });
+    }
 
-    message += `\nTotal Amount: ₹${total.toFixed(2)}`;
-    message += "\n\nPlease confirm my order.";
-
-    window.open(
-        "https://wa.me/919724307705?text=" +
-        encodeURIComponent(message),
-        "_blank",
-        "noopener"
-    );
 }
 
-// =====================================
-// 22. WEBSITE INITIALIZATION
-// =====================================
 
-document.addEventListener("DOMContentLoaded", async () => {
+// =============================================
+// 21. WEBSITE INITIALIZATION
+// =============================================
 
-    console.log("ZivaGo website initialized.");
+document.addEventListener("DOMContentLoaded", async function() {
+
+    console.log("ZivaGO website initialized.");
 
     updateCartCount();
 
     try {
 
+        // Sync script.js products into IndexedDB.
         await initializeProducts();
 
+        // Display homepage/products page.
         await displayProducts();
 
+        // Display cart if cart page is open.
         await displayCart();
+
+        updateCartCount();
+
+        console.log("ZivaGO website ready.");
 
     } catch (error) {
 
@@ -818,9 +919,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             "Website initialization error:",
             error
         );
+
     }
+
 });
 
-// =====================================
+
+// =============================================
 // END OF SCRIPT.JS
-// =====================================
+// =============================================
