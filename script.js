@@ -36,17 +36,6 @@ const defaultProducts = [
 ];
 
 
-// =============================================
-// 2. ADD NEW PRODUCT EXAMPLE
-// =============================================
-
-// {
-//     id: 4,
-//     name: "New Juice Product",
-//     price: 399,
-//     description: "Your product description here.",
-//     image: "/new-product.jpg"
-// }
 
 
 // =============================================
@@ -873,6 +862,18 @@ async function orderWhatsApp() {
     }
 
 }
+// FIX: CART POPUP ON ALL PAGES
+
+document.addEventListener("click", function (event) {
+
+    const button = event.target.closest(".add-btn");
+
+    if (!button) return;
+
+    // Popup is handled by addToCart()
+    console.log("Add to Cart button clicked");
+
+});
 
 
 // =============================================
