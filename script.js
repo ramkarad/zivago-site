@@ -17,7 +17,7 @@ const STORE_NAME = "products";
 
 // UPI PAYMENT CONFIGURATION
 const UPI_ID = "8734025711@axl";
-const UPI_NAME = "ZivaGo";
+const UPI_NAME = "Taitva";
 const UPI_NOTE = "Taitva Juice Order";
 
 // WhatsApp number
@@ -930,7 +930,7 @@ async function orderWhatsApp() {
         let total = 0;
 
         let message =
-            "Hello ZivaGo! I want to place a juice order:\n\n";
+            "Hello Taitva! I want to place a juice order:\n\n";
 
         cart.forEach(item => {
 
