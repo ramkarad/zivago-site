@@ -22,7 +22,7 @@ const defaultProducts = [
         id: 1,
         name: "Taitva Sea Buckthorn Juice – 500ml",
         price: 289,
-        description: "Enjoy the pure and natural goodness of Taitva Sea Buckthorn Juice, made from nutrient-rich berries sourced from the Himalayas. Packed with natural antioxidants, this refreshing juice is a perfect addition to your daily wellness routine. It offers a naturally tangy taste with no added preservatives, bringing you nature's goodness in every bottle. Conveniently packed in a 500ml bottle, it is ideal for everyday consumption.",
+        description: "Enjoy the natural goodness of Himalayan Sea Buckthorn Juice in a 500ml bottle. Refreshing, tangy and packed with naturally occurring vitamins and antioxidants. A perfect choice for your daily wellness routine. No added preservatives.",
         image: "/T500.jpg"
     },
 
