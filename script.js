@@ -1,6 +1,6 @@
 
 /* =============================================
-   ZIVAGO JUICE WEBSITE - COMPLETE SCRIPT.JS
+   TAITVA JUICE WEBSITE - COMPLETE SCRIPT.JS
    PRODUCTS + INDEXEDDB + CART + UPI PAYMENT
    WHATSAPP ORDER + CART SUCCESS POPUP
    ============================================= */
@@ -158,7 +158,7 @@ async function initializeProducts() {
 
             db.close();
 
-            console.log("ZivaGo products initialized.");
+            console.log("Taitva products initialized.");
 
             resolve(true);
         };
@@ -352,7 +352,7 @@ function showCartToast(productName) {
 
                     <h3>Added to Cart Successfully!</h3>
 
-                    <span>Thank you for shopping with ZivaGo</span>
+                    <span>Thank you for shopping with Taitva</span>
 
                 </div>
 
@@ -844,7 +844,7 @@ function removeFromCart(id) {
 
 // =============================================
 // 21. UPI PAYMENT
-// ZIVAGO JUICE ORDER
+// TAITVA JUICE ORDER
 // =============================================
 
 async function payWithUPI() {
@@ -875,19 +875,15 @@ async function payWithUPI() {
 
         // UPI payment link
 
-        const upiLink =
+        const upiParams = new URLSearchParams({
+            pa: UPI_ID,
+            pn: UPI_NAME,
+            am: amount,
+            cu: "INR",
+            tn: UPI_NOTE
+        });
 
-            "upi://pay?" +
-
-            "pa=" + encodeURIComponent(UPI_ID) +
-
-            "&pn=" + encodeURIComponent(UPI_NAME) +
-
-            "&am=" + amount +
-
-            "&cu=INR" +
-
-            "&tn=" + encodeURIComponent(UPI_NOTE);
+        const upiLink = "upi://pay?" + upiParams.toString();
 
         console.log("UPI Payment Amount:", amount);
 
@@ -984,7 +980,7 @@ async function orderWhatsApp() {
 
 document.addEventListener("DOMContentLoaded", async function() {
 
-    console.log("ZivaGo website initialized.");
+    console.log("Taitva website initialized.");
 
     updateCartCount();
 
@@ -998,7 +994,7 @@ document.addEventListener("DOMContentLoaded", async function() {
 
         updateCartCount();
 
-        console.log("ZivaGo website ready.");
+        console.log("Taitva website ready.");
 
     } catch (error) {
 
