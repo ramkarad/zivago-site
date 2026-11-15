@@ -18,7 +18,7 @@ const STORE_NAME = "products";
 // UPI PAYMENT CONFIGURATION
 const UPI_ID = "8734025711@axl";
 const UPI_NAME = "ZivaGo";
-const UPI_NOTE = "ZivaGo Juice Order";
+const UPI_NOTE = "Taitva Juice Order";
 
 // WhatsApp number
 const WHATSAPP_NUMBER = "919724307705";
