@@ -340,14 +340,17 @@ function updateCartCount() {
 // Works with existing index.html popup.
 // =============================================
 
-let cartToastTimer;
+// =============================================
+// CART SUCCESS POPUP
+// Works on ALL pages
+// =============================================
 
+let cartToastTimer;
 
 function showCartToast(productName) {
 
     let toast = document.getElementById("cart-toast");
 
-    // Create popup if it does not exist.
     if (!toast) {
 
         toast = document.createElement("div");
@@ -356,75 +359,68 @@ function showCartToast(productName) {
         toast.className = "cart-toast";
 
         toast.innerHTML = `
-
             <div class="toast-icon">✓</div>
 
             <div class="toast-content">
-
                 <strong>Added to Cart Successfully!</strong>
 
                 <p id="toast-message"></p>
 
                 <div class="toast-bottom">
-
                     <span class="toast-cart-count" id="toast-count"></span>
 
                     <a href="./cart.html" class="toast-cart-link">
                         View Cart →
                     </a>
-
                 </div>
-
             </div>
 
-            <button class="toast-close"
-                onclick="closeCartToast()">
+            <button class="toast-close" onclick="closeCartToast()">
                 ×
             </button>
 
             <div class="toast-progress"></div>
-
         `;
 
         document.body.appendChild(toast);
-
     }
 
-    const message = document.getElementById("toast-message");
-
-    const countElement = document.getElementById("toast-count");
-
-    if (message) {
-
-        message.textContent =
-            productName + " has been added to your shopping cart.";
-
-    }
+    document.getElementById("toast-message").textContent =
+        productName + " has been added to your shopping cart.";
 
     const total = getCart().reduce(
-        (sum, item) =>
-            sum + Number(item.quantity || 0),
+        (sum, item) => sum + Number(item.quantity || 0),
         0
     );
 
-    if (countElement) {
-
-        countElement.textContent =
-            "🛒 " + total + " items in your cart";
-
-    }
+    document.getElementById("toast-count").textContent =
+        "🛒 " + total + " items in your cart";
 
     clearTimeout(cartToastTimer);
 
     toast.classList.remove("show");
 
-    // Restart animation.
     void toast.offsetWidth;
 
     toast.classList.add("show");
 
-    cartToastTimer = setTimeout(closeCartToast, 3500);
+    cartToastTimer = setTimeout(() => {
+        closeCartToast();
+    }, 3500);
+}
 
+
+// CLOSE POPUP
+
+function closeCartToast() {
+
+    const toast = document.getElementById("cart-toast");
+
+    if (toast) {
+        toast.classList.remove("show");
+    }
+
+    clearTimeout(cartToastTimer);
 }
 
 
