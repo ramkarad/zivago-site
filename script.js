@@ -16,7 +16,7 @@ const DB_VERSION = 1;
 const STORE_NAME = "products";
 
 // UPI PAYMENT CONFIGURATION
-const UPI_ID = "8734025711@axl";
+const UPI_ID = "tusharsanandiya@okicici";
 const UPI_NAME = "Taitva";
 const UPI_NOTE = "Taitva Juice Order";
 
