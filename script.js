@@ -1,9 +1,13 @@
 
 /* =============================================
-   ZIVAGO WEBSITE - COMPLETE SCRIPT.JS
-   PRODUCTS + INDEXEDDB + CART + WHATSAPP
-   PREMIUM CART SUCCESS POPUP
+   ZIVAGO JUICE WEBSITE - COMPLETE SCRIPT.JS
+   PRODUCTS + INDEXEDDB + CART + UPI PAYMENT
+   WHATSAPP ORDER + CART SUCCESS POPUP
    ============================================= */
+
+// =============================================
+// 1. CONFIGURATION
+// =============================================
 
 const CART_KEY = "freshsip_cart";
 
@@ -11,9 +15,17 @@ const DB_NAME = "zivago_database";
 const DB_VERSION = 1;
 const STORE_NAME = "products";
 
+// UPI PAYMENT CONFIGURATION
+const UPI_ID = "8734025711@axl";
+const UPI_NAME = "ZivaGo";
+const UPI_NOTE = "ZivaGo Juice Order";
+
+// WhatsApp number
+const WHATSAPP_NUMBER = "919724307705";
+
 
 // =============================================
-// 1. DEFAULT PRODUCTS
+// 2. DEFAULT PRODUCTS
 // =============================================
 
 const defaultProducts = [
@@ -35,7 +47,7 @@ const defaultProducts = [
 
 
 // =============================================
-// 2. INDEXEDDB CONNECTION
+// 3. INDEXEDDB CONNECTION
 // =============================================
 
 function openProductDB() {
@@ -58,7 +70,6 @@ function openProductDB() {
                     keyPath: "id"
                 });
             }
-
         };
 
         request.onsuccess = function() {
@@ -70,12 +81,11 @@ function openProductDB() {
         };
 
     });
-
 }
 
 
 // =============================================
-// 3. IMAGE PATH
+// 4. IMAGE PATH
 // =============================================
 
 function getImagePath(image) {
@@ -98,12 +108,11 @@ function getImagePath(image) {
     image = image.replace(/^\.\/+/, "");
 
     return "/" + image.replace(/^\/+/, "");
-
 }
 
 
 // =============================================
-// 4. IMAGE ERROR HANDLING
+// 5. IMAGE ERROR HANDLING
 // =============================================
 
 function imageError(img) {
@@ -113,12 +122,11 @@ function imageError(img) {
     img.onerror = null;
 
     img.src = "https://placehold.co/600x400?text=Image+Not+Available";
-
 }
 
 
 // =============================================
-// 5. SYNCHRONIZE PRODUCTS WITH INDEXEDDB
+// 6. INITIALIZE PRODUCTS
 // =============================================
 
 async function initializeProducts() {
@@ -134,9 +142,8 @@ async function initializeProducts() {
 
         const store = transaction.objectStore(STORE_NAME);
 
-        // Synchronize default products.
-        // Do not clear the store here: that would delete
-        // products added through your admin panel.
+        // Add/update default products without deleting
+        // products added through the admin panel.
 
         defaultProducts.forEach(product => {
 
@@ -151,10 +158,9 @@ async function initializeProducts() {
 
             db.close();
 
-            console.log("ZivaGO products synchronized successfully.");
+            console.log("ZivaGo products initialized.");
 
             resolve(true);
-
         };
 
         transaction.onerror = function() {
@@ -162,7 +168,6 @@ async function initializeProducts() {
             db.close();
 
             reject(transaction.error);
-
         };
 
         transaction.onabort = function() {
@@ -170,16 +175,14 @@ async function initializeProducts() {
             db.close();
 
             reject(transaction.error);
-
         };
 
     });
-
 }
 
 
 // =============================================
-// 6. GET ALL PRODUCTS
+// 7. GET ALL PRODUCTS
 // =============================================
 
 async function getProducts() {
@@ -209,7 +212,6 @@ async function getProducts() {
             db.close();
 
             resolve(updatedProducts);
-
         };
 
         request.onerror = function() {
@@ -217,16 +219,14 @@ async function getProducts() {
             db.close();
 
             reject(request.error);
-
         };
 
     });
-
 }
 
 
 // =============================================
-// 7. ESCAPE HTML
+// 8. ESCAPE HTML
 // =============================================
 
 function escapeHTML(value) {
@@ -245,7 +245,7 @@ function escapeHTML(value) {
 
 
 // =============================================
-// 8. MOBILE MENU
+// 9. MOBILE MENU
 // =============================================
 
 function toggleMenu() {
@@ -260,7 +260,7 @@ function toggleMenu() {
 
 
 // =============================================
-// 9. CART FUNCTIONS
+// 10. CART FUNCTIONS
 // =============================================
 
 function getCart() {
@@ -278,7 +278,6 @@ function getCart() {
         console.error("Cart loading error:", error);
 
         return [];
-
     }
 
 }
@@ -297,7 +296,7 @@ function saveCart(cart) {
 
 
 // =============================================
-// 10. UPDATE CART COUNT
+// 11. UPDATE CART COUNT
 // =============================================
 
 function updateCartCount() {
@@ -318,9 +317,7 @@ function updateCartCount() {
 
 
 // =============================================
-// 11. PREMIUM CART SUCCESS POPUP
-// MATCHES YOUR EXISTING CSS
-// WORKS ON ALL PAGES
+// 12. CART SUCCESS POPUP
 // =============================================
 
 let cartToastTimer;
@@ -329,7 +326,6 @@ function showCartToast(productName) {
 
     let popup = document.getElementById("cart-success-popup");
 
-    // Create popup if it does not exist
     if (!popup) {
 
         popup = document.createElement("div");
@@ -356,7 +352,7 @@ function showCartToast(productName) {
 
                     <h3>Added to Cart Successfully!</h3>
 
-                    <span>Thank you for shopping with Taitva</span>
+                    <span>Thank you for shopping with ZivaGo</span>
 
                 </div>
 
@@ -389,15 +385,8 @@ function showCartToast(productName) {
         `;
 
         document.body.appendChild(popup);
-
     }
 
-    // Make sure popup exists in current page
-    if (!popup.isConnected) {
-        document.body.appendChild(popup);
-    }
-
-    // Update product message
     const message = popup.querySelector("#popup-message");
 
     if (message) {
@@ -408,14 +397,12 @@ function showCartToast(productName) {
 
     }
 
-    // Calculate total cart quantity
     const total = getCart().reduce(
         (sum, item) =>
             sum + (Number(item.quantity) || 0),
         0
     );
 
-    // Update cart quantity
     const count = popup.querySelector("#popup-count");
 
     if (count) {
@@ -425,20 +412,14 @@ function showCartToast(productName) {
 
     }
 
-    // Restart popup timer
     clearTimeout(cartToastTimer);
 
-    // Restart animation
     popup.classList.remove("active");
 
     void popup.offsetWidth;
 
-    // Show popup using your CSS class
     popup.classList.add("active");
 
-    console.log("Cart popup displayed:", productName);
-
-    // Automatically close after 3.5 seconds
     cartToastTimer = setTimeout(() => {
 
         closeCartToast();
@@ -449,7 +430,7 @@ function showCartToast(productName) {
 
 
 // =============================================
-// 12. CLOSE CART POPUP
+// 13. CLOSE CART POPUP
 // =============================================
 
 function closeCartToast() {
@@ -457,9 +438,7 @@ function closeCartToast() {
     const popup = document.getElementById("cart-success-popup");
 
     if (popup) {
-
         popup.classList.remove("active");
-
     }
 
     clearTimeout(cartToastTimer);
@@ -468,7 +447,7 @@ function closeCartToast() {
 
 
 // =============================================
-// 13. PRODUCT CARD
+// 14. PRODUCT CARD
 // =============================================
 
 function productCard(product) {
@@ -526,8 +505,7 @@ function productCard(product) {
 
 
 // =============================================
-// 14. DISPLAY PRODUCTS
-// HOMEPAGE + PRODUCTS PAGE
+// 15. DISPLAY PRODUCTS
 // =============================================
 
 async function displayProducts() {
@@ -545,8 +523,8 @@ async function displayProducts() {
         const empty =
             document.getElementById("empty-products");
 
-
         // HOMEPAGE
+
         if (featured) {
 
             featured.innerHTML = products
@@ -556,8 +534,8 @@ async function displayProducts() {
 
         }
 
-
         // PRODUCTS PAGE
+
         if (all) {
 
             all.innerHTML = products
@@ -565,9 +543,7 @@ async function displayProducts() {
                 .join("");
 
             if (empty) {
-
                 empty.hidden = products.length !== 0;
-
             }
 
         }
@@ -584,7 +560,7 @@ async function displayProducts() {
 
 
 // =============================================
-// 15. ADD TO CART
+// 16. ADD TO CART
 // =============================================
 
 async function addToCart(id) {
@@ -602,7 +578,6 @@ async function addToCart(id) {
             alert("Product not found!");
 
             return;
-
         }
 
         const cart = getCart();
@@ -619,18 +594,14 @@ async function addToCart(id) {
         } else {
 
             cart.push({
-
                 id: product.id,
                 quantity: 1
-
             });
 
         }
 
-        // Save product in cart
         saveCart(cart);
 
-        // Show premium popup
         showCartToast(product.name);
 
         console.log("Product added to cart:", product.name);
@@ -647,7 +618,43 @@ async function addToCart(id) {
 
 
 // =============================================
-// 16. DISPLAY CART
+// 17. CALCULATE CART TOTAL
+// =============================================
+
+async function calculateCartTotal() {
+
+    const cart = getCart();
+
+    const products = await getProducts();
+
+    let total = 0;
+
+    cart.forEach(item => {
+
+        const product = products.find(
+            p => String(p.id) === String(item.id)
+        );
+
+        if (product) {
+
+            const quantity = Math.max(
+                1,
+                Number(item.quantity) || 1
+            );
+
+            total += Number(product.price) * quantity;
+
+        }
+
+    });
+
+    return total;
+
+}
+
+
+// =============================================
+// 18. DISPLAY CART
 // =============================================
 
 async function displayCart() {
@@ -695,7 +702,6 @@ async function displayCart() {
             summary.hidden = true;
 
             return;
-
         }
 
         summary.hidden = false;
@@ -792,7 +798,7 @@ async function displayCart() {
 
 
 // =============================================
-// 17. CHANGE QUANTITY
+// 19. CHANGE QUANTITY
 // =============================================
 
 function changeQuantity(id, change) {
@@ -820,7 +826,7 @@ function changeQuantity(id, change) {
 
 
 // =============================================
-// 18. REMOVE FROM CART
+// 20. REMOVE FROM CART
 // =============================================
 
 function removeFromCart(id) {
@@ -837,7 +843,73 @@ function removeFromCart(id) {
 
 
 // =============================================
-// 19. WHATSAPP ORDER
+// 21. UPI PAYMENT
+// ZIVAGO JUICE ORDER
+// =============================================
+
+async function payWithUPI() {
+
+    try {
+
+        const cart = getCart();
+
+        if (cart.length === 0) {
+
+            alert("Your cart is empty!");
+
+            return;
+        }
+
+        const total = await calculateCartTotal();
+
+        if (!Number.isFinite(total) || total <= 0) {
+
+            alert("Invalid payment amount.");
+
+            return;
+        }
+
+        // Exact cart amount
+
+        const amount = total.toFixed(2);
+
+        // UPI payment link
+
+        const upiLink =
+
+            "upi://pay?" +
+
+            "pa=" + encodeURIComponent(UPI_ID) +
+
+            "&pn=" + encodeURIComponent(UPI_NAME) +
+
+            "&am=" + amount +
+
+            "&cu=INR" +
+
+            "&tn=" + encodeURIComponent(UPI_NOTE);
+
+        console.log("UPI Payment Amount:", amount);
+
+        console.log("UPI Transaction Note:", UPI_NOTE);
+
+        // Open installed UPI application
+
+        window.location.href = upiLink;
+
+    } catch (error) {
+
+        console.error("UPI payment error:", error);
+
+        alert("Unable to open UPI payment application.");
+
+    }
+
+}
+
+
+// =============================================
+// 22. WHATSAPP ORDER
 // =============================================
 
 async function orderWhatsApp() {
@@ -853,13 +925,12 @@ async function orderWhatsApp() {
             alert("Your cart is empty!");
 
             return;
-
         }
 
         let total = 0;
 
         let message =
-            "Hello ZivaGo! I want to place an order:\n\n";
+            "Hello ZivaGo! I want to place a juice order:\n\n";
 
         cart.forEach(item => {
 
@@ -885,11 +956,15 @@ async function orderWhatsApp() {
 
         message += "\n\nPlease confirm my order.";
 
+        const whatsappURL =
+            "https://wa.me/" +
+            WHATSAPP_NUMBER +
+            "?text=" +
+            encodeURIComponent(message);
+
         window.open(
-            "https://wa.me/919724307705?text=" +
-            encodeURIComponent(message),
-            "_blank",
-            "noopener"
+            whatsappURL,
+            "_blank"
         );
 
     } catch (error) {
@@ -904,31 +979,26 @@ async function orderWhatsApp() {
 
 
 // =============================================
-// 20. WEBSITE INITIALIZATION
+// 23. WEBSITE INITIALIZATION
 // =============================================
 
 document.addEventListener("DOMContentLoaded", async function() {
 
-    console.log("ZivaGO website initialized.");
+    console.log("ZivaGo website initialized.");
 
-    // Update cart count
     updateCartCount();
 
     try {
 
-        // Initialize IndexedDB products
         await initializeProducts();
 
-        // Display homepage/products
         await displayProducts();
 
-        // Display cart if cart page is open
         await displayCart();
 
-        // Update cart count again
         updateCartCount();
 
-        console.log("ZivaGO website ready.");
+        console.log("ZivaGo website ready.");
 
     } catch (error) {
 
