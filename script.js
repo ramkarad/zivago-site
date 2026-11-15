@@ -1,8 +1,8 @@
 
-// =============================================
-// ZIVAGO WEBSITE - COMPLETE SCRIPT.JS
-// PRODUCTS + INDEXEDDB + CART + WHATSAPP
-// =============================================
+/* =============================================
+   ZIVAGO WEBSITE - COMPLETE SCRIPT.JS
+   PRODUCTS + INDEXEDDB + CART + WHATSAPP
+   ============================================= */
 
 const CART_KEY = "freshsip_cart";
 
@@ -12,12 +12,10 @@ const STORE_NAME = "products";
 
 
 // =============================================
-// 1. MANAGE PRODUCTS HERE
-// Add, edit or remove products in this array.
+// 1. DEFAULT PRODUCTS
 // =============================================
 
 const defaultProducts = [
-
     {
         id: 1,
         name: "Taitva Sea Buckthorn Juice – 500ml",
@@ -25,7 +23,6 @@ const defaultProducts = [
         description: "Enjoy the natural goodness of Himalayan Sea Buckthorn Juice in a 500ml bottle. Refreshing, tangy and packed with naturally occurring vitamins and antioxidants. A perfect choice for your daily wellness routine. No added preservatives.",
         image: "/T500.jpg"
     },
-
     {
         id: 2,
         name: "Taitva Sea Buckthorn Juice – 2 * 500ml (Pack of 2)",
@@ -36,10 +33,8 @@ const defaultProducts = [
 ];
 
 
-
-
 // =============================================
-// 3. INDEXEDDB CONNECTION
+// 2. INDEXEDDB CONNECTION
 // =============================================
 
 function openProductDB() {
@@ -58,11 +53,9 @@ function openProductDB() {
             const db = event.target.result;
 
             if (!db.objectStoreNames.contains(STORE_NAME)) {
-
                 db.createObjectStore(STORE_NAME, {
                     keyPath: "id"
                 });
-
             }
 
         };
@@ -81,7 +74,7 @@ function openProductDB() {
 
 
 // =============================================
-// 4. IMAGE PATH
+// 3. IMAGE PATH
 // =============================================
 
 function getImagePath(image) {
@@ -109,7 +102,7 @@ function getImagePath(image) {
 
 
 // =============================================
-// 5. IMAGE ERROR HANDLING
+// 4. IMAGE ERROR HANDLING
 // =============================================
 
 function imageError(img) {
@@ -124,10 +117,7 @@ function imageError(img) {
 
 
 // =============================================
-// 6. SYNCHRONIZE PRODUCTS WITH INDEXEDDB
-// IMPORTANT:
-// defaultProducts is the source of truth.
-// Every page load updates IndexedDB to match it.
+// 5. SYNCHRONIZE PRODUCTS WITH INDEXEDDB
 // =============================================
 
 async function initializeProducts() {
@@ -143,10 +133,8 @@ async function initializeProducts() {
 
         const store = transaction.objectStore(STORE_NAME);
 
-        // Remove old product records.
         store.clear();
 
-        // Insert current products from script.js.
         defaultProducts.forEach(product => {
 
             store.put({
@@ -188,7 +176,7 @@ async function initializeProducts() {
 
 
 // =============================================
-// 7. GET ALL PRODUCTS
+// 6. GET ALL PRODUCTS
 // =============================================
 
 async function getProducts() {
@@ -235,7 +223,7 @@ async function getProducts() {
 
 
 // =============================================
-// 8. ESCAPE HTML
+// 7. ESCAPE HTML
 // =============================================
 
 function escapeHTML(value) {
@@ -254,7 +242,7 @@ function escapeHTML(value) {
 
 
 // =============================================
-// 9. MOBILE MENU
+// 8. MOBILE MENU
 // =============================================
 
 function toggleMenu() {
@@ -269,7 +257,7 @@ function toggleMenu() {
 
 
 // =============================================
-// 10. CART FUNCTIONS
+// 9. CART FUNCTIONS
 // =============================================
 
 function getCart() {
@@ -283,6 +271,8 @@ function getCart() {
         return Array.isArray(cart) ? cart : [];
 
     } catch (error) {
+
+        console.error("Cart loading error:", error);
 
         return [];
 
@@ -304,7 +294,7 @@ function saveCart(cart) {
 
 
 // =============================================
-// 11. UPDATE CART COUNT
+// 10. UPDATE CART COUNT
 // =============================================
 
 function updateCartCount() {
@@ -325,13 +315,8 @@ function updateCartCount() {
 
 
 // =============================================
-// 12. CART SUCCESS POPUP
-// Works with existing index.html popup.
-// =============================================
-
-// =============================================
-// CART SUCCESS POPUP
-// Works on ALL pages
+// 11. CART SUCCESS POPUP
+// WORKS ON HOMEPAGE AND PRODUCTS PAGE
 // =============================================
 
 let cartToastTimer;
@@ -340,6 +325,7 @@ function showCartToast(productName) {
 
     let toast = document.getElementById("cart-toast");
 
+    // Create popup if it does not exist
     if (!toast) {
 
         toast = document.createElement("div");
@@ -348,43 +334,73 @@ function showCartToast(productName) {
         toast.className = "cart-toast";
 
         toast.innerHTML = `
+
             <div class="toast-icon">✓</div>
 
             <div class="toast-content">
+
                 <strong>Added to Cart Successfully!</strong>
 
                 <p id="toast-message"></p>
 
                 <div class="toast-bottom">
+
                     <span class="toast-cart-count" id="toast-count"></span>
 
                     <a href="./cart.html" class="toast-cart-link">
                         View Cart →
                     </a>
+
                 </div>
+
             </div>
 
-            <button class="toast-close" onclick="closeCartToast()">
+            <button
+                type="button"
+                class="toast-close"
+                onclick="closeCartToast()">
                 ×
             </button>
 
             <div class="toast-progress"></div>
+
         `;
 
         document.body.appendChild(toast);
+
     }
 
-    document.getElementById("toast-message").textContent =
+    // Make sure popup is attached to current page
+    if (!toast.isConnected) {
+        document.body.appendChild(toast);
+    }
+
+    // Get popup elements
+    const messageElement = toast.querySelector("#toast-message");
+    const countElement = toast.querySelector("#toast-count");
+
+    if (!messageElement || !countElement) {
+        console.error("Cart popup elements are missing.");
+        return;
+    }
+
+    // Update product name
+    messageElement.textContent =
         productName + " has been added to your shopping cart.";
 
+    // Calculate cart quantity
     const total = getCart().reduce(
-        (sum, item) => sum + Number(item.quantity || 0),
+        (sum, item) => sum + (Number(item.quantity) || 0),
         0
     );
 
-    document.getElementById("toast-count").textContent =
+    countElement.textContent =
         "🛒 " + total + " items in your cart";
 
+    // Ensure popup is visible above page elements
+    toast.style.zIndex = "99999";
+
+    // Restart animation
     clearTimeout(cartToastTimer);
 
     toast.classList.remove("show");
@@ -393,28 +409,20 @@ function showCartToast(productName) {
 
     toast.classList.add("show");
 
+    console.log("Cart popup displayed:", productName);
+
+    // Close popup after 3.5 seconds
     cartToastTimer = setTimeout(() => {
+
         closeCartToast();
+
     }, 3500);
-}
 
-
-// CLOSE POPUP
-
-function closeCartToast() {
-
-    const toast = document.getElementById("cart-toast");
-
-    if (toast) {
-        toast.classList.remove("show");
-    }
-
-    clearTimeout(cartToastTimer);
 }
 
 
 // =============================================
-// 13. CLOSE CART POPUP
+// 12. CLOSE CART POPUP
 // =============================================
 
 function closeCartToast() {
@@ -433,7 +441,7 @@ function closeCartToast() {
 
 
 // =============================================
-// 14. PRODUCT CARD
+// 13. PRODUCT CARD
 // =============================================
 
 function productCard(product) {
@@ -471,6 +479,7 @@ function productCard(product) {
                     </span>
 
                     <button
+                        type="button"
                         class="add-btn"
                         onclick="addToCart('${id}')">
 
@@ -490,9 +499,8 @@ function productCard(product) {
 
 
 // =============================================
-// 15. DISPLAY PRODUCTS
-// Homepage: First 3 products.
-// Products page: All products.
+// 14. DISPLAY PRODUCTS
+// HOMEPAGE + PRODUCTS PAGE
 // =============================================
 
 async function displayProducts() {
@@ -512,7 +520,6 @@ async function displayProducts() {
 
 
         // HOMEPAGE
-
         if (featured) {
 
             featured.innerHTML = products
@@ -524,7 +531,6 @@ async function displayProducts() {
 
 
         // PRODUCTS PAGE
-
         if (all) {
 
             all.innerHTML = products
@@ -551,7 +557,8 @@ async function displayProducts() {
 
 
 // =============================================
-// 16. ADD TO CART
+// 15. ADD TO CART
+// POPUP WORKS ON ALL PAGES
 // =============================================
 
 async function addToCart(id) {
@@ -594,9 +601,13 @@ async function addToCart(id) {
 
         }
 
+        // Save cart
         saveCart(cart);
 
+        // Show popup after saving
         showCartToast(product.name);
+
+        console.log("Product added to cart:", product.name);
 
     } catch (error) {
 
@@ -610,7 +621,7 @@ async function addToCart(id) {
 
 
 // =============================================
-// 17. DISPLAY CART
+// 16. DISPLAY CART
 // =============================================
 
 async function displayCart() {
@@ -753,7 +764,7 @@ async function displayCart() {
 
 
 // =============================================
-// 18. CHANGE QUANTITY
+// 17. CHANGE QUANTITY
 // =============================================
 
 function changeQuantity(id, change) {
@@ -781,7 +792,7 @@ function changeQuantity(id, change) {
 
 
 // =============================================
-// 19. REMOVE FROM CART
+// 18. REMOVE FROM CART
 // =============================================
 
 function removeFromCart(id) {
@@ -798,7 +809,7 @@ function removeFromCart(id) {
 
 
 // =============================================
-// 20. WHATSAPP ORDER
+// 19. WHATSAPP ORDER
 // =============================================
 
 async function orderWhatsApp() {
@@ -862,41 +873,31 @@ async function orderWhatsApp() {
     }
 
 }
-// FIX: CART POPUP ON ALL PAGES
-
-document.addEventListener("click", function (event) {
-
-    const button = event.target.closest(".add-btn");
-
-    if (!button) return;
-
-    // Popup is handled by addToCart()
-    console.log("Add to Cart button clicked");
-
-});
 
 
 // =============================================
-// 21. WEBSITE INITIALIZATION
+// 20. WEBSITE INITIALIZATION
 // =============================================
 
 document.addEventListener("DOMContentLoaded", async function() {
 
     console.log("ZivaGO website initialized.");
 
+    // Update cart count immediately
     updateCartCount();
 
     try {
 
-        // Sync script.js products into IndexedDB.
+        // Initialize products
         await initializeProducts();
 
-        // Display homepage/products page.
+        // Display products on homepage/products page
         await displayProducts();
 
-        // Display cart if cart page is open.
+        // Display cart if cart page is open
         await displayCart();
 
+        // Update cart count again
         updateCartCount();
 
         console.log("ZivaGO website ready.");
