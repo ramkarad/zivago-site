@@ -2,6 +2,7 @@
 /* =============================================
    ZIVAGO WEBSITE - COMPLETE SCRIPT.JS
    PRODUCTS + INDEXEDDB + CART + WHATSAPP
+   PREMIUM CART SUCCESS POPUP
    ============================================= */
 
 const CART_KEY = "freshsip_cart";
@@ -133,7 +134,9 @@ async function initializeProducts() {
 
         const store = transaction.objectStore(STORE_NAME);
 
-        store.clear();
+        // Synchronize default products.
+        // Do not clear the store here: that would delete
+        // products added through your admin panel.
 
         defaultProducts.forEach(product => {
 
@@ -315,103 +318,127 @@ function updateCartCount() {
 
 
 // =============================================
-// 11. CART SUCCESS POPUP
-// WORKS ON HOMEPAGE AND PRODUCTS PAGE
+// 11. PREMIUM CART SUCCESS POPUP
+// MATCHES YOUR EXISTING CSS
+// WORKS ON ALL PAGES
 // =============================================
 
 let cartToastTimer;
 
 function showCartToast(productName) {
 
-    let toast = document.getElementById("cart-toast");
+    let popup = document.getElementById("cart-success-popup");
 
     // Create popup if it does not exist
-    if (!toast) {
+    if (!popup) {
 
-        toast = document.createElement("div");
+        popup = document.createElement("div");
 
-        toast.id = "cart-toast";
-        toast.className = "cart-toast";
+        popup.id = "cart-success-popup";
+        popup.className = "cart-success-popup";
 
-        toast.innerHTML = `
+        popup.innerHTML = `
 
-            <div class="toast-icon">✓</div>
+            <button
+                type="button"
+                class="popup-close"
+                onclick="closeCartToast()">
+                ×
+            </button>
 
-            <div class="toast-content">
+            <div class="popup-heading">
 
-                <strong>Added to Cart Successfully!</strong>
+                <div class="popup-check">
+                    ✓
+                </div>
 
-                <p id="toast-message"></p>
+                <div class="popup-title">
 
-                <div class="toast-bottom">
+                    <h3>Added to Cart Successfully!</h3>
 
-                    <span class="toast-cart-count" id="toast-count"></span>
-
-                    <a href="./cart.html" class="toast-cart-link">
-                        View Cart →
-                    </a>
+                    <span>Thank you for shopping with Taitva</span>
 
                 </div>
 
             </div>
 
-            <button
-                type="button"
-                class="toast-close"
-                onclick="closeCartToast()">
-                ×
-            </button>
+            <p
+                class="popup-description"
+                id="popup-message">
+            </p>
 
-            <div class="toast-progress"></div>
+            <div class="popup-divider"></div>
+
+            <div class="popup-bottom">
+
+                <span
+                    class="popup-cart-count"
+                    id="popup-count">
+                </span>
+
+                <a
+                    href="./cart.html"
+                    class="popup-view-cart">
+                    View Cart →
+                </a>
+
+            </div>
+
+            <div class="popup-progress"></div>
 
         `;
 
-        document.body.appendChild(toast);
+        document.body.appendChild(popup);
 
     }
 
-    // Make sure popup is attached to current page
-    if (!toast.isConnected) {
-        document.body.appendChild(toast);
+    // Make sure popup exists in current page
+    if (!popup.isConnected) {
+        document.body.appendChild(popup);
     }
 
-    // Get popup elements
-    const messageElement = toast.querySelector("#toast-message");
-    const countElement = toast.querySelector("#toast-count");
+    // Update product message
+    const message = popup.querySelector("#popup-message");
 
-    if (!messageElement || !countElement) {
-        console.error("Cart popup elements are missing.");
-        return;
+    if (message) {
+
+        message.textContent =
+            productName +
+            " has been added to your shopping cart.";
+
     }
 
-    // Update product name
-    messageElement.textContent =
-        productName + " has been added to your shopping cart.";
-
-    // Calculate cart quantity
+    // Calculate total cart quantity
     const total = getCart().reduce(
-        (sum, item) => sum + (Number(item.quantity) || 0),
+        (sum, item) =>
+            sum + (Number(item.quantity) || 0),
         0
     );
 
-    countElement.textContent =
-        "🛒 " + total + " items in your cart";
+    // Update cart quantity
+    const count = popup.querySelector("#popup-count");
 
-    // Ensure popup is visible above page elements
-    toast.style.zIndex = "99999";
+    if (count) {
 
-    // Restart animation
+        count.textContent =
+            "🛒 " + total + " items in your cart";
+
+    }
+
+    // Restart popup timer
     clearTimeout(cartToastTimer);
 
-    toast.classList.remove("show");
+    // Restart animation
+    popup.classList.remove("active");
 
-    void toast.offsetWidth;
+    void popup.offsetWidth;
 
-    toast.classList.add("show");
+    // Show popup using your CSS class
+    popup.classList.add("active");
 
     console.log("Cart popup displayed:", productName);
 
-    // Close popup after 3.5 seconds
+    // Automatically close after 3.5 seconds
     cartToastTimer = setTimeout(() => {
 
         closeCartToast();
@@ -427,11 +454,11 @@ function showCartToast(productName) {
 
 function closeCartToast() {
 
-    const toast = document.getElementById("cart-toast");
+    const popup = document.getElementById("cart-success-popup");
 
-    if (toast) {
+    if (popup) {
 
-        toast.classList.remove("show");
+        popup.classList.remove("active");
 
     }
 
@@ -558,7 +585,6 @@ async function displayProducts() {
 
 // =============================================
 // 15. ADD TO CART
-// POPUP WORKS ON ALL PAGES
 // =============================================
 
 async function addToCart(id) {
@@ -601,10 +627,10 @@ async function addToCart(id) {
 
         }
 
-        // Save cart
+        // Save product in cart
         saveCart(cart);
 
-        // Show popup after saving
+        // Show premium popup
         showCartToast(product.name);
 
         console.log("Product added to cart:", product.name);
@@ -714,13 +740,15 @@ async function displayCart() {
 
                         <div class="quantity-control">
 
-                            <button onclick="changeQuantity('${id}',-1)">
+                            <button
+                                onclick="changeQuantity('${id}',-1)">
                                 −
                             </button>
 
                             <span>${quantity}</span>
 
-                            <button onclick="changeQuantity('${id}',1)">
+                            <button
+                                onclick="changeQuantity('${id}',1)">
                                 +
                             </button>
 
@@ -883,15 +911,15 @@ document.addEventListener("DOMContentLoaded", async function() {
 
     console.log("ZivaGO website initialized.");
 
-    // Update cart count immediately
+    // Update cart count
     updateCartCount();
 
     try {
 
-        // Initialize products
+        // Initialize IndexedDB products
         await initializeProducts();
 
-        // Display products on homepage/products page
+        // Display homepage/products
         await displayProducts();
 
         // Display cart if cart page is open
