@@ -42,6 +42,7 @@ const defaultProducts = [
         id: 2,
         name: "Taitva Sea Buckthorn Juice – 2 * 500ml (Pack of 2)",
         price: 529,
+       originalPrice: 899,
         description: "Enjoy the natural goodness of Sea Buckthorn Juice in a 1000ml pack. Refreshing, tangy and packed with naturally occurring vitamins and antioxidants. A perfect choice for your daily wellness routine. No added preservatives.",
         image: "/T1000.jpg"
     }
