@@ -1,9 +1,10 @@
 
 /* =============================================
-   TAITVA JUICE WEBSITE - COMPLETE SCRIPT.JS
+   TAITVA / ZIVAGO JUICE WEBSITE
+   COMPLETE SCRIPT.JS
    PRODUCTS + INDEXEDDB + CART + UPI PAYMENT
    WHATSAPP ORDER + CART SUCCESS POPUP
-   ============================================= */
+============================================= */
 
 // =============================================
 // 1. CONFIGURATION
@@ -33,6 +34,7 @@ const defaultProducts = [
         id: 1,
         name: "Taitva Sea Buckthorn Juice – 500ml",
         price: 289,
+        originalPrice: 499,
         description: "Enjoy the natural goodness of Himalayan Sea Buckthorn Juice in a 500ml bottle. Refreshing, tangy and packed with naturally occurring vitamins and antioxidants. A perfect choice for your daily wellness routine. No added preservatives.",
         image: "/T500.jpg"
     },
@@ -40,7 +42,7 @@ const defaultProducts = [
         id: 2,
         name: "Taitva Sea Buckthorn Juice – 2 * 500ml (Pack of 2)",
         price: 529,
-        description: "Enjoy the natural goodness of Sea Buckthorn Juice in a 1000ml bottle. Refreshing, tangy and packed with naturally occurring vitamins and antioxidants. A perfect choice for your daily wellness routine. No added preservatives.",
+        description: "Enjoy the natural goodness of Sea Buckthorn Juice in a 1000ml pack. Refreshing, tangy and packed with naturally occurring vitamins and antioxidants. A perfect choice for your daily wellness routine. No added preservatives.",
         image: "/T1000.jpg"
     }
 ];
@@ -142,8 +144,8 @@ async function initializeProducts() {
 
         const store = transaction.objectStore(STORE_NAME);
 
-        // Add/update default products without deleting
-        // products added through the admin panel.
+        // Update default products without deleting
+        // other products in IndexedDB.
 
         defaultProducts.forEach(product => {
 
@@ -447,7 +449,51 @@ function closeCartToast() {
 
 
 // =============================================
-// 14. PRODUCT CARD
+// 14. PRODUCT PRICE HTML
+// =============================================
+
+function getProductPriceHTML(product) {
+
+    const price = Number(product.price) || 0;
+    const originalPrice = Number(product.originalPrice) || 0;
+
+    const hasDiscount =
+        originalPrice > price && price > 0;
+
+    const discountPercent = hasDiscount
+        ? Math.round(
+            ((originalPrice - price) / originalPrice) * 100
+        )
+        : 0;
+
+    return `
+
+        <div class="product-price">
+
+            <span class="price">
+                ₹${price.toFixed(0)}
+            </span>
+
+            ${hasDiscount ? `
+
+                <span class="original-price">
+                    ₹${originalPrice.toFixed(0)}
+                </span>
+
+                <span class="discount-badge">
+                    ${discountPercent}% OFF
+                </span>
+
+            ` : ""}
+
+        </div>
+
+    `;
+}
+
+
+// =============================================
+// 15. PRODUCT CARD
 // =============================================
 
 function productCard(product) {
@@ -459,8 +505,6 @@ function productCard(product) {
     const description = escapeHTML(product.description);
 
     const id = escapeHTML(product.id);
-
-    const price = Number(product.price) || 0;
 
     return `
 
@@ -480,9 +524,7 @@ function productCard(product) {
 
                 <div class="product-bottom">
 
-                    <span class="price">
-                        ₹${price.toFixed(2)}
-                    </span>
+                    ${getProductPriceHTML(product)}
 
                     <button
                         type="button"
@@ -505,7 +547,7 @@ function productCard(product) {
 
 
 // =============================================
-// 15. DISPLAY PRODUCTS
+// 16. DISPLAY PRODUCTS
 // =============================================
 
 async function displayProducts() {
@@ -560,7 +602,7 @@ async function displayProducts() {
 
 
 // =============================================
-// 16. ADD TO CART
+// 17. ADD TO CART
 // =============================================
 
 async function addToCart(id) {
@@ -618,7 +660,7 @@ async function addToCart(id) {
 
 
 // =============================================
-// 17. CALCULATE CART TOTAL
+// 18. CALCULATE CART TOTAL
 // =============================================
 
 async function calculateCartTotal() {
@@ -654,7 +696,7 @@ async function calculateCartTotal() {
 
 
 // =============================================
-// 18. DISPLAY CART
+// 19. DISPLAY CART
 // =============================================
 
 async function displayCart() {
@@ -718,6 +760,12 @@ async function displayCart() {
 
             const price = Number(product.price) || 0;
 
+            const originalPrice =
+                Number(product.originalPrice) || 0;
+
+            const hasDiscount =
+                originalPrice > price && price > 0;
+
             const quantity = Math.max(
                 1,
                 Number(item.quantity) || 1
@@ -742,7 +790,19 @@ async function displayCart() {
 
                         <h3>${escapeHTML(product.name)}</h3>
 
-                        <p>₹${price.toFixed(2)}</p>
+                        <p class="cart-price">
+
+                            ₹${price.toFixed(0)}
+
+                            ${hasDiscount ? `
+
+                                <span class="original-price">
+                                    ₹${originalPrice.toFixed(0)}
+                                </span>
+
+                            ` : ""}
+
+                        </p>
 
                         <div class="quantity-control">
 
@@ -798,7 +858,7 @@ async function displayCart() {
 
 
 // =============================================
-// 19. CHANGE QUANTITY
+// 20. CHANGE QUANTITY
 // =============================================
 
 function changeQuantity(id, change) {
@@ -826,7 +886,7 @@ function changeQuantity(id, change) {
 
 
 // =============================================
-// 20. REMOVE FROM CART
+// 21. REMOVE FROM CART
 // =============================================
 
 function removeFromCart(id) {
@@ -843,8 +903,7 @@ function removeFromCart(id) {
 
 
 // =============================================
-// 21. UPI PAYMENT
-// TAITVA JUICE ORDER
+// 22. UPI PAYMENT
 // =============================================
 
 async function payWithUPI() {
@@ -869,11 +928,7 @@ async function payWithUPI() {
             return;
         }
 
-        // Exact cart amount
-
         const amount = total.toFixed(2);
-
-        // UPI payment link
 
         const upiParams = new URLSearchParams({
             pa: UPI_ID,
@@ -886,10 +941,6 @@ async function payWithUPI() {
         const upiLink = "upi://pay?" + upiParams.toString();
 
         console.log("UPI Payment Amount:", amount);
-
-        console.log("UPI Transaction Note:", UPI_NOTE);
-
-        // Open installed UPI application
 
         window.location.href = upiLink;
 
@@ -905,7 +956,7 @@ async function payWithUPI() {
 
 
 // =============================================
-// 22. WHATSAPP ORDER
+// 23. WHATSAPP ORDER
 // =============================================
 
 async function orderWhatsApp() {
@@ -975,7 +1026,7 @@ async function orderWhatsApp() {
 
 
 // =============================================
-// 23. WEBSITE INITIALIZATION
+// 24. WEBSITE INITIALIZATION
 // =============================================
 
 document.addEventListener("DOMContentLoaded", async function() {
